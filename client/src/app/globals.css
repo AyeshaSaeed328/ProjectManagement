@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+/* Reset box-sizing for all elements */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Base layout setup */
+html,
+body,
+#root,
+.app {
+  height: 100%;
+  width: 100%;
+
+  @apply text-sm;
+  @apply text-gray-900;
+  @apply bg-gray-500;
+}
+
+/* Enable class-based dark mode */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Declare theme values using CSS variables */
+@theme {
+  /* Color Variables */
+  --color-white: #ffffff;
+
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-500: #6b7280;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+
+  --color-blue-200: #93c5fd;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+
+  --color-dark-bg: #101214;
+  --color-dark-secondary: #1d1f21;
+  --color-dark-tertiary: #3b3d40;
+  --color-blue-primary: #0275ff;
+  --color-stroke-dark: #2d3135;
+
+  /* Background images */
+  --bg-gradient-radial: radial-gradient(var(--gradient-stops));
+  --bg-gradient-conic: conic-gradient(from 180deg at 50% 50%, var(--gradient-stops));
+}
+
+
