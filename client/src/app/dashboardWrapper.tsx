@@ -3,8 +3,9 @@
 import React from 'react'
 import Navbar from '@/(components)/Navbar'
 import Sidebar from '@/(components)/Sidebar'
-import StoreProvider, {useAppSelector} from './redux'
+import {useAppSelector} from './redux'
 import { useEffect } from 'react'
+import StoreProvider from './StoreProvider'
 
 const DashboardLayout = ({children}: {children: React.ReactNode}) => {
   const isSidebarOpen = useAppSelector((state) => state.global.isSidebarOpen,
@@ -20,11 +21,12 @@ useEffect(() => {
   else{
     document.documentElement.classList.remove("dark")
   }
-})
+}, [isDarkMode])
   
   return (
     <div className='flex min-h-screen w-full bg-gray-50 text-gray-900'>
-        <Sidebar/>
+      {/* set z value also other than static*/}
+        {isSidebarOpen && <Sidebar/>}
         <main className={`dark:bg-dark-bg flex w-full flex-col ${
           isSidebarOpen? "md:pl-85" : ""
         }`}>

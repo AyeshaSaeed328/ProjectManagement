@@ -1,0 +1,243 @@
+// // This is your Prisma schema file,
+// // learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// generator client {
+//   provider = "prisma-client-js"
+//   output   = "../generated/prisma"
+// }
+
+// datasource db {
+//   provider = "postgresql"
+//   url      = env("DATABASE_URL")
+// }
+
+// model User {
+//   id             String   @id @default(cuid())
+//   cognitoId      String   @unique
+//   username       String   @unique
+//   profilePicture String?
+//   teamId         String?
+//   createdAt      DateTime @default(now())
+//   updatedAt      DateTime @updatedAt
+
+//   comments          Comment[]
+//   attachments       Attachment[]
+//   authoredTasks     Task[]
+//   // assignedTasks     Task[]           @relation("AssignedTasks")
+//   TaskAssignments   TaskAssignment[]
+//   team              Team?            @relation(fields: [teamId], references: [id])
+//   productOwnedTeams Team[]           @relation("ProductOwner")
+//   managedTeams      Team[]           @relation("ProjectManager")
+
+//   @@index([username], name: "idx_username")
+// }
+
+// model Team {
+//   id               String        @id @default(cuid())
+//   teamName         String
+//   productOwnerId   String?
+//   productOwner     User?         @relation("ProductOwner", fields: [productOwnerId], references: [id])
+//   projectManagerId String?
+//   projectManager   User?         @relation("ProjectManager", fields: [projectManagerId], references: [id])
+//   createdAt        DateTime      @default(now())
+//   updatedAt        DateTime      @updatedAt
+//   projectTeams     ProjectTeam[]
+//   members          User[]
+// }
+
+// model ProjectTeam {
+//   id        String   @id @default(cuid())
+//   teamId    String
+//   projectId String
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+//   team      Team     @relation(fields: [teamId], references: [id])
+//   project   Project  @relation(fields: [projectId], references: [id])
+
+//   @@unique([teamId, projectId])
+// }
+
+// model Project {
+//   id          String        @id @default(cuid())
+//   name        String
+//   description String?
+//   createdAt   DateTime      @default(now())
+//   updatedAt   DateTime      @updatedAt
+//   teams       ProjectTeam[]
+//   tasks       Task[]
+// }
+
+// model Task {
+//   id              String           @id @default(cuid())
+//   title           String
+//   description     String?
+//   status          Status           @default(TODO)
+//   priority        Priority
+//   tags            String?
+//   startDate       DateTime
+//   endDate         DateTime
+//   points          Int
+//   projectId       String
+//   authorId        String
+//   createdAt       DateTime         @default(now())
+//   updatedAt       DateTime         @updatedAt
+//   project         Project          @relation(fields: [projectId], references: [id])
+//   author          User             @relation(fields: [authorId], references: [id])
+//   taskAssignments TaskAssignment[]
+//   comments        Comment[]
+//   attachments     Attachment[]
+// }
+
+// model TaskAssignment {
+//   id     String @id @default(cuid())
+//   userId String
+//   taskId String
+//   user   User   @relation(fields: [userId], references: [id])
+//   task   Task   @relation(fields: [taskId], references: [id])
+
+//   @@unique([userId, taskId])
+// }
+
+// model Comment {
+//   id     String @id @default(cuid())
+//   text   String
+//   taskId String
+//   userId String
+//   task   Task   @relation(fields: [taskId], references: [id])
+//   user   User   @relation(fields: [userId], references: [id])
+// }
+
+// model Attachment {
+//   id           String @id @default(cuid())
+//   fileUrl      String
+//   fileName     String
+//   taskId       String
+//   uploadedById String
+//   task         Task   @relation(fields: [taskId], references: [id])
+//   uploadedBy   User   @relation(fields: [uploadedById], references: [id])
+// }
+
+// enum Status {
+//   TODO
+//   IN_PROGRESS
+//   DONE
+// }
+
+// enum Priority {
+//   LOW
+//   MEDIUM
+//   HIGH
+//   CRITICAL
+// }
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  userId            Int     @id @default(autoincrement())
+  cognitoId         String  @unique
+  username          String  @unique
+  profilePictureUrl String?
+  teamId            Int?
+
+  authoredTasks   Task[]           @relation("TaskAuthor")
+  assignedTasks   Task[]           @relation("TaskAssignee")
+  taskAssignments TaskAssignment[]
+  attachments     Attachment[]
+  comments        Comment[]
+  team            Team?            @relation(fields: [teamId], references: [id])
+}
+
+model Team {
+  id                   Int           @id @default(autoincrement())
+  teamName             String
+  productOwnerUserId   Int?
+  projectManagerUserId Int?
+  projectTeams         ProjectTeam[]
+  user                 User[]
+}
+
+model Project {
+  id           Int           @id @default(autoincrement())
+  name         String
+  description  String?
+  startDate    DateTime?
+  endDate      DateTime?
+  tasks        Task[]
+  projectTeams ProjectTeam[]
+}
+
+model ProjectTeam {
+  id        Int     @id @default(autoincrement())
+  teamId    Int
+  projectId Int
+  team      Team    @relation(fields: [teamId], references: [id])
+  project   Project @relation(fields: [projectId], references: [id])
+}
+
+model Task {
+  id             Int       @id @default(autoincrement())
+  title          String
+  description    String?
+  status         String?
+  priority       String?
+  tags           String?
+  startDate      DateTime?
+  dueDate        DateTime?
+  points         Int?
+  projectId      Int
+  authorUserId   Int
+  assignedUserId Int?
+
+  project         Project          @relation(fields: [projectId], references: [id])
+  author          User             @relation("TaskAuthor", fields: [authorUserId], references: [userId])
+  assignee        User?            @relation("TaskAssignee", fields: [assignedUserId], references: [userId])
+  taskAssignments TaskAssignment[]
+  attachments     Attachment[]
+  comments        Comment[]
+}
+
+model TaskAssignment {
+  id     Int @id @default(autoincrement())
+  userId Int
+  taskId Int
+
+  user User @relation(fields: [userId], references: [userId])
+  task Task @relation(fields: [taskId], references: [id])
+}
+
+model Attachment {
+  id           Int     @id @default(autoincrement())
+  fileURL      String
+  fileName     String?
+  taskId       Int
+  uploadedById Int
+
+  task       Task @relation(fields: [taskId], references: [id])
+  uploadedBy User @relation(fields: [uploadedById], references: [userId])
+}
+
+model Comment {
+  id     Int    @id @default(autoincrement())
+  text   String
+  taskId Int
+  userId Int
+
+  task Task @relation(fields: [taskId], references: [id])
+  user User @relation(fields: [userId], references: [userId])
+}

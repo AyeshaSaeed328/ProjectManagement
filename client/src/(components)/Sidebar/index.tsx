@@ -34,25 +34,25 @@ const Sidebar = (props: Props) => {
   return (
     <aside className="fixed h-screen w-85 bg-white dark:bg-dark-bg p-4 border-r border-gray-200 dark:border-stroke-dark flex flex-col text-sm shadow-xl transition-all duration-300 z-40 overflow-y-auto dark:text-white ">
       <div className="flex h-[100%] w-full flex-col justify-start">
-        <div className="z-50 flex min-h-[56px] w-85 items-center justify-between bg-white px-6 pt-3 dark:bg-black">
+        <div className="z-50 flex min-h-[56px] w-85 items-center justify-between px-6 pt-3">
           <div className="text-xl font-bold text-gray-800 dark:text-white">
             Collabster
           </div>
             
-          {isSidebarOpen ? null : (
+          {!isSidebarOpen ? null : (
             <button
               className="py-3"
               onClick={() => {
                 dispatch(toggleSidebar(!isSidebarOpen));
               }}
-            > <X className="h-6 w-6 text-gray-800 hover:text-gray-500 dark:text-white" />
+            > <X className="h-6 w-6 mr-4 text-gray-800 hover:text-gray-500 dark:text-white" />
             </button>
             )}
             
          
         </div>
         {/* TEAM */}
-        <div className="flex items-center gap-5 border-y-[1.5px] border-gray-200 px-8 py-4 dark:border-gray-700">
+        <div className="flex items-center gap-5 border-y-[1.5px] border-gray-200 px-8 py-8 dark:border-gray-700">
           <Image
   src="/placeholder.png"
   alt="Logo"
@@ -106,13 +106,32 @@ const Sidebar = (props: Props) => {
         isOpen={showPriority}
         onToggle={() => setShowPriority(!showPriority)}
       />
+      
       {showPriority && (
-        <div className="ml-4 space-y-2 border-b-[1.5px] gap-5 border-gray-200 px-8 py-4">
-          <NavItem icon={Flag} label="High" href="/s"/>
-          <NavItem icon={Flag} label="Medium" href="/s"/>
-          <NavItem icon={Flag} label="Low" href="/s"/>
-        </div>
-      )}
+          <div className="ml-4 space-y-2 border-b-[1.5px] gap-5 border-gray-200 px-8 py-4">
+            <NavItem
+              icon={AlertCircle}
+              label="Urgent"
+              href="/priority/urgent"
+            />
+            <NavItem
+              icon={ShieldAlert}
+              label="High"
+              href="/priority/high"
+            />
+            <NavItem
+              icon={AlertTriangle}
+              label="Medium"
+              href="/priority/medium"
+            />
+            <NavItem icon={AlertOctagon} label="Low" href="/priority/low" />
+            <NavItem
+              icon={Layers3}
+              label="Backlog"
+              href="/priority/backlog"
+            />
+          </div>
+        )}
       </div>
     </aside>
   );
@@ -126,7 +145,7 @@ interface NavItemProps {
   label: string;
 }
 
-// ✅ Reusable nav item
+
 const NavItem = ({ href, icon: Icon, label }: NavItemProps) => {
  const pathname = usePathname();
   const isActive =
@@ -135,7 +154,7 @@ const NavItem = ({ href, icon: Icon, label }: NavItemProps) => {
   return (
     <Link href={href} className="w-full">
       <div
-        className={`relative flex cursor-pointer items-center gap-3 transition-colors hover:bg-gray-100 dark:bg-black dark:hover:bg-gray-700 ${
+        className={`relative flex cursor-pointer items-center gap-3 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
           isActive ? "bg-gray-50 text-white dark:bg-gray-600" : ""
         } justify-start px-8 py-3`}
       >

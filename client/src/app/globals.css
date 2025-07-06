@@ -16,8 +16,8 @@ body,
   width: 100%;
 
   @apply text-sm;
-  @apply text-gray-900;
-  @apply bg-gray-500;
+  @apply dark:bg-dark-bg;
+  @apply bg-white;
 }
 
 /* Enable class-based dark mode */

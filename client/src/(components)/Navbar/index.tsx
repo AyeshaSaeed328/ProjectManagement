@@ -1,5 +1,6 @@
+'use client'
 import React from 'react'
-import {Search, Settings, Sun, Moon} from "lucide-react"
+import {Search, Settings, Sun, Moon, Menu} from "lucide-react"
 import Link  from 'next/link'
 import { useAppDispatch, useAppSelector } from '@/app/redux'
 import { toggleDarkMode, toggleSidebar } from '@/state'
@@ -18,7 +19,8 @@ const Navbar = () => {
     <div className='flex items-center justify-between bg-white px-4 py-3 dark:bg-dark-bg'>
       {/* {Search and side bar button} */}
     <div className='flex items-center gap-8'>
-      {!isSidebarOpen? null: (<button onClick={() => dispatch(toggleSidebar(!isSidebarOpen))}>
+      {isSidebarOpen? null: (<button onClick={() => dispatch(toggleSidebar(!isSidebarOpen))}>
+        <Menu className='h-6 w-6 cursor-pointer dark:text-white'/>
 
       </button>)}
       
