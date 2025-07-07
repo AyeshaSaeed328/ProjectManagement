@@ -61,9 +61,12 @@
 // }
 
 // model Project {
-//   id          String        @id @default(cuid())
+//   id String @id @default(cuid())
+
 //   name        String
 //   description String?
+//   startDate   DateTime
+//   endDate     DateTime
 //   createdAt   DateTime      @default(now())
 //   updatedAt   DateTime      @updatedAt
 //   teams       ProjectTeam[]
@@ -132,15 +135,16 @@
 //   HIGH
 //   CRITICAL
 // }
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// // This is your Prisma schema file,
+// // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+
 
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -149,95 +153,138 @@ datasource db {
 }
 
 model User {
-  userId            Int     @id @default(autoincrement())
-  cognitoId         String  @unique
-  username          String  @unique
-  profilePictureUrl String?
-  teamId            Int?
+  id              String   @id @default(cuid())
+  cognitoId       String   @unique
+  username        String   @unique
+  profilePicture  String?
+  teamId          String?
 
-  authoredTasks   Task[]           @relation("TaskAuthor")
-  assignedTasks   Task[]           @relation("TaskAssignee")
-  taskAssignments TaskAssignment[]
-  attachments     Attachment[]
-  comments        Comment[]
-  team            Team?            @relation(fields: [teamId], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  authoredTasks     Task[]           @relation("TaskAuthor")
+  assignedTasks     Task[]           @relation("TaskAssignee")
+  taskAssignments   TaskAssignment[]
+  attachments       Attachment[]
+  comments          Comment[]
+  team              Team?            @relation(fields: [teamId], references: [id])
+  productOwnedTeams Team[]           @relation("ProductOwner")
+  managedTeams      Team[]           @relation("ProjectManager")
 }
 
 model Team {
-  id                   Int           @id @default(autoincrement())
-  teamName             String
-  productOwnerUserId   Int?
-  projectManagerUserId Int?
-  projectTeams         ProjectTeam[]
-  user                 User[]
+  id                 String        @id @default(cuid())
+  teamName           String
+  productOwnerId     String?
+  projectManagerId   String?
+
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  // Relations
+  productOwner       User?         @relation("ProductOwner", fields: [productOwnerId], references: [id])
+  projectManager     User?         @relation("ProjectManager", fields: [projectManagerId], references: [id])
+  projectTeams       ProjectTeam[]
+  members            User[]
 }
 
 model Project {
-  id           Int           @id @default(autoincrement())
-  name         String
-  description  String?
-  startDate    DateTime?
-  endDate      DateTime?
-  tasks        Task[]
-  projectTeams ProjectTeam[]
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  teams       ProjectTeam[]
+  tasks       Task[]
 }
 
 model ProjectTeam {
-  id        Int     @id @default(autoincrement())
-  teamId    Int
-  projectId Int
-  team      Team    @relation(fields: [teamId], references: [id])
-  project   Project @relation(fields: [projectId], references: [id])
+  id        String   @id @default(cuid())
+  teamId    String
+  projectId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  team      Team     @relation(fields: [teamId], references: [id])
+  project   Project  @relation(fields: [projectId], references: [id])
+
+  @@unique([teamId, projectId])
 }
 
 model Task {
-  id             Int       @id @default(autoincrement())
-  title          String
-  description    String?
-  status         String?
-  priority       String?
-  tags           String?
-  startDate      DateTime?
-  dueDate        DateTime?
-  points         Int?
-  projectId      Int
-  authorUserId   Int
-  assignedUserId Int?
+  id              String   @id @default(cuid())
+  title           String
+  description     String?
+  status          Status   @default(TODO)
+  priority        Priority
+  tags            String?
+  startDate       DateTime
+  endDate         DateTime
+  points          Int
+  projectId       String
+  authorId        String
+  assignedUserId  String?
 
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
   project         Project          @relation(fields: [projectId], references: [id])
-  author          User             @relation("TaskAuthor", fields: [authorUserId], references: [userId])
-  assignee        User?            @relation("TaskAssignee", fields: [assignedUserId], references: [userId])
+  author          User             @relation("TaskAuthor", fields: [authorId], references: [id])
+  assignee        User?            @relation("TaskAssignee", fields: [assignedUserId], references: [id])
   taskAssignments TaskAssignment[]
-  attachments     Attachment[]
   comments        Comment[]
+  attachments     Attachment[]
 }
 
 model TaskAssignment {
-  id     Int @id @default(autoincrement())
-  userId Int
-  taskId Int
+  id     String @id @default(cuid())
+  userId String
+  taskId String
 
-  user User @relation(fields: [userId], references: [userId])
-  task Task @relation(fields: [taskId], references: [id])
-}
+  user   User @relation(fields: [userId], references: [id])
+  task   Task @relation(fields: [taskId], references: [id])
 
-model Attachment {
-  id           Int     @id @default(autoincrement())
-  fileURL      String
-  fileName     String?
-  taskId       Int
-  uploadedById Int
-
-  task       Task @relation(fields: [taskId], references: [id])
-  uploadedBy User @relation(fields: [uploadedById], references: [userId])
+  @@unique([userId, taskId])
 }
 
 model Comment {
-  id     Int    @id @default(autoincrement())
+  id     String @id @default(cuid())
   text   String
-  taskId Int
-  userId Int
+  taskId String
+  userId String
 
-  task Task @relation(fields: [taskId], references: [id])
-  user User @relation(fields: [userId], references: [userId])
+  task   Task @relation(fields: [taskId], references: [id])
+  user   User @relation(fields: [userId], references: [id])
 }
+
+model Attachment {
+  id           String @id @default(cuid())
+  fileUrl      String
+  fileName     String?
+  taskId       String
+  uploadedById String
+
+  task         Task @relation(fields: [taskId], references: [id])
+  uploadedBy   User @relation(fields: [uploadedById], references: [id])
+}
+
+enum Status {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+

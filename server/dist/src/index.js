@@ -10,6 +10,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const helmet_1 = __importDefault(require("helmet"));
 const morgan_1 = __importDefault(require("morgan"));
 // routes import
+const project_route_1 = __importDefault(require("./routes/project.route"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
@@ -22,6 +23,7 @@ app.use((0, cors_1.default)());
 app.get('/', (req, res) => {
     res.send('Welcome to the Project Management API');
 });
+app.use("/api/v1/projects", project_route_1.default);
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);

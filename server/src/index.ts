@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 
 // routes import
+import projectRoutes from "./routes/project.route"
 
 dotenv.config();
 const app = express();
@@ -20,6 +21,8 @@ app.use(cors());
 app.get('/', (req, res) => {
   res.send('Welcome to the Project Management API');
 });
+
+app.use("/api/v1/projects", projectRoutes);
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
