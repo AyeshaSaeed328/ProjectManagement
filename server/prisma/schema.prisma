@@ -195,6 +195,7 @@ model Project {
   description String?
   startDate   DateTime
   endDate     DateTime
+  status      ProjectStatus @default(NOT_STARTED)
 
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -286,5 +287,12 @@ enum Priority {
   MEDIUM
   HIGH
   CRITICAL
+}
+
+enum ProjectStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  ON_HOLD
 }
 
