@@ -17,6 +17,7 @@ const asyncHandler_1 = __importDefault(require("../utils/asyncHandler"));
 const ApiError_1 = require("../utils/ApiError");
 const ApiResponse_1 = require("../utils/ApiResponse");
 const client_1 = require("@prisma/client");
+const uploadToCloud_1 = require("../utils/uploadToCloud");
 const prisma = new client_1.PrismaClient();
 const getAllUsers = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const users = yield prisma.user.findMany({});
@@ -40,8 +41,8 @@ const createUser = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, v
     let profilePicture;
     if (req.file) {
         profilePictureLocalPath = req.file.path;
-        // profilePicture = await uploadToCloud(profilePictureLocalPath);
-        profilePicture = profilePictureLocalPath;
+        profilePicture = yield (0, uploadToCloud_1.uploadToS3)(profilePictureLocalPath);
+        // profilePicture = profilePictureLocalPath
         if (!profilePicture) {
             throw new ApiError_1.ApiError(500, "Failed to upload profile picture");
         }
@@ -49,8 +50,8 @@ const createUser = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, v
     const userData = {
         cognitoId,
         username,
-        // profilePicture: profilePicture?.url || "https://ui-avatars.com/api/?background=random"
-        profilePicture: "https://ui-avatars.com/api/?background=random"
+        profilePicture: (profilePicture === null || profilePicture === void 0 ? void 0 : profilePicture.Location) || "https://ui-avatars.com/api/?background=random"
+        // profilePicture: "https://ui-avatars.com/api/?background=random"
     };
     if (teamId) {
         userData.team = {

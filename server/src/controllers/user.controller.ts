@@ -3,7 +3,7 @@ import asyncHandler from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
 import { PrismaClient, Prisma,User } from '@prisma/client';
-// import {uploadToCloud} from "../utils/uploadToCloud"
+import {uploadToS3} from "../utils/uploadToCloud"
 
 
 interface MulterRequest extends Request {
@@ -70,8 +70,8 @@ const createUser = asyncHandler(
 
     if (req.file) {
       profilePictureLocalPath = req.file.path;
-      // profilePicture = await uploadToCloud(profilePictureLocalPath);
-      profilePicture = profilePictureLocalPath
+      profilePicture = await uploadToS3(profilePictureLocalPath);
+      // profilePicture = profilePictureLocalPath
 
       if (!profilePicture) {
         throw new ApiError(500, "Failed to upload profile picture");
@@ -81,8 +81,8 @@ const createUser = asyncHandler(
     const userData: Prisma.UserCreateInput = {
       cognitoId,
       username,
-      // profilePicture: profilePicture?.url || "https://ui-avatars.com/api/?background=random"
-      profilePicture: "https://ui-avatars.com/api/?background=random"
+      profilePicture: profilePicture?.Location || "https://ui-avatars.com/api/?background=random"
+      // profilePicture: "https://ui-avatars.com/api/?background=random"
     };
 
     if (teamId) {
