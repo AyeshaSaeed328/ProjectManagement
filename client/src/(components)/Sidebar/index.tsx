@@ -1,15 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Home, Inbox, MoreHorizontal, ChevronDown, ChevronRight, Folder, Flag, LockIcon , X, AlertCircle,
+import { Home, ChevronDown, ChevronRight, Folder,  LockIcon , X, AlertCircle,
   AlertOctagon,
   AlertTriangle,
   Briefcase,
-  ChevronUp,
   Layers3,
   LucideIcon,
-  Search,
-  Settings,
   ShieldAlert,
   User,
   Users,
@@ -21,9 +18,8 @@ import { useAppDispatch, useAppSelector } from '@/app/redux'
 import { toggleSidebar } from '@/state';
 
 
-type Props = {}
 
-const Sidebar = (props: Props) => {
+const Sidebar = () => {
   const [showWorkspaces, setShowWorkspaces] = useState(true);
   const [showPriority, setShowPriority] = useState(true);
   const dispatch = useAppDispatch();
