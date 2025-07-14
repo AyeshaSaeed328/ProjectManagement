@@ -50,6 +50,7 @@ const uploadToS3 = (localFilePath) => __awaiter(void 0, void 0, void 0, function
     try {
         if (!localFilePath)
             return null;
+        console.log("dddddd");
         const fileContent = fs_1.default.readFileSync(localFilePath);
         const fileName = localFilePath.split('/').pop();
         const params = {
@@ -60,11 +61,13 @@ const uploadToS3 = (localFilePath) => __awaiter(void 0, void 0, void 0, function
             ContentType: 'auto', // optionally detect with `mime` package
         };
         const response = yield s3.upload(params).promise();
+        console.log(response);
         fs_1.default.unlinkSync(localFilePath); // cleanup temp file
         return response; // contains Location, Bucket, Key, etc.
     }
     catch (error) {
         fs_1.default.unlinkSync(localFilePath); // cleanup even on failure
+        console.log(error);
         return null;
     }
 });

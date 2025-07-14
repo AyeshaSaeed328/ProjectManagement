@@ -41,6 +41,7 @@ const s3 = new AWS.S3({
 const uploadToS3 = async (localFilePath: string) => {
   try {
     if (!localFilePath) return null;
+    console.log("dddddd")
 
     const fileContent = fs.readFileSync(localFilePath);
     const fileName = localFilePath.split('/').pop();
@@ -54,12 +55,14 @@ const uploadToS3 = async (localFilePath: string) => {
     };
 
     const response = await s3.upload(params).promise();
+    console.log(response)
 
     fs.unlinkSync(localFilePath); // cleanup temp file
 
     return response; // contains Location, Bucket, Key, etc.
   } catch (error) {
     fs.unlinkSync(localFilePath); // cleanup even on failure
+    console.log(error)
     return null;
   }
 };

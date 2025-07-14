@@ -82,7 +82,6 @@ const createUser = asyncHandler(
       cognitoId,
       username,
       profilePicture: profilePicture?.Location || "https://ui-avatars.com/api/?background=random"
-      // profilePicture: "https://ui-avatars.com/api/?background=random"
     };
 
     if (teamId) {

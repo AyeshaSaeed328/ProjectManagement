@@ -51,7 +51,6 @@ const createUser = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, v
         cognitoId,
         username,
         profilePicture: (profilePicture === null || profilePicture === void 0 ? void 0 : profilePicture.Location) || "https://ui-avatars.com/api/?background=random"
-        // profilePicture: "https://ui-avatars.com/api/?background=random"
     };
     if (teamId) {
         userData.team = {
