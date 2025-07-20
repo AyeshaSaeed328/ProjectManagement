@@ -29,7 +29,8 @@ export interface User {
   username: string;
   email: string;
   profilePictureUrl?: string;
-  cognitoId?: string;
+  passwordHash: string;
+  refreshToken?: string;
   teamId?: string;
 }
 
@@ -77,36 +78,55 @@ export interface Team {
 export const api = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
-    // prepareHeaders: async (headers) => {
-    //   const session = await fetchAuthSession();
-    //   const { accessToken } = session.tokens ?? {};
-    //   if (accessToken) {
-    //     headers.set("Authorization", `Bearer ${accessToken}`);
-    //   }
-    //   return headers;
-    // },
+    credentials: "include", // 👈 ensures cookies (for tokens) are sent
   }),
   reducerPath: "api",
-  tagTypes: ["Projects", "Tasks", "Users", "Teams"],
+  tagTypes: ["Projects", "Tasks", "Users", "Teams", "Auth"],
   endpoints: (build) => ({
-    // getAuthUser: build.query({
-    //   queryFn: async (_, _queryApi, _extraoptions, fetchWithBQ) => {
-    //     try {
-    //       const user = await getCurrentUser();
-    //       const session = await fetchAuthSession();
-    //       if (!session) throw new Error("No session found");
-    //       const { userSub } = session;
-    //       const { accessToken } = session.tokens ?? {};
+    // Authentication Endpoints 👇
 
-    //       const userDetailsResponse = await fetchWithBQ(`users/${userSub}`);
-    //       const userDetails = userDetailsResponse.data as User;
+    registerUser: build.mutation<User, Partial<User>>({
+      query: (userData) => ({
+        url: "users",
+        method: "POST",
+        body: userData,
+      }),
+      invalidatesTags: ["Users"],
+    }),
 
-    //       return { data: { user, userSub, userDetails } };
-    //     } catch (error: any) {
-    //       return { error: error.message || "Could not fetch user data" };
-    //     }
-    //   },
-    // }),
+    loginUser: build.mutation<
+      { user: User },
+      { email?: string; username?: string; password: string }
+    >({
+      query: (credentials) => ({
+        url: "users/login",
+        method: "POST",
+        body: credentials,
+      }),
+      invalidatesTags: ["Auth"],
+    }),
+
+    logoutUser: build.mutation<void, void>({
+      query: () => ({
+        url: "users/logout",
+        method: "POST",
+      }),
+      invalidatesTags: ["Auth"],
+    }),
+
+    getAuthUser: build.query<User, void>({
+      query: () => "auth/me",
+      providesTags: ["Auth"],
+    }),
+    updateUserDetails: build.mutation<User, Partial<User>>({
+      query: (userData) => ({
+        url: "users/update",
+        method: "PATCH",
+        body: userData,
+      }),
+      invalidatesTags: ["Auth", "Users"],
+    }),
+
     getProjects: build.query<Project[], void>({
       query: () => "projects/all",
       providesTags: ["Projects"],

@@ -141,8 +141,6 @@
 // // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
-
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -153,14 +151,22 @@ datasource db {
 }
 
 model User {
-  id              String   @id @default(cuid())
-  cognitoId       String   @unique
-  username        String   @unique
-  profilePicture  String?
-  teamId          String?
+  id                      String        @id @default(cuid())
+  email                   String        @unique
+  username                String        @unique
+  profilePicture          String?
+  teamId                  String?
+  passwordHash            String
+  refreshToken            String?
+  loginType               UserLoginType @default(EMAIL_PASSWORD)
+  isEmailVerified         Boolean       @default(false)
+  forgotPasswordToken     String?
+  forgotPasswordExpiry    DateTime?
+  emailVerificationToken  String?
+  emailVerificationExpiry DateTime?
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   authoredTasks     Task[]           @relation("TaskAuthor")
@@ -174,19 +180,19 @@ model User {
 }
 
 model Team {
-  id                 String        @id @default(cuid())
-  teamName           String
-  productOwnerId     String?
-  projectManagerId   String?
+  id               String  @id @default(cuid())
+  teamName         String
+  productOwnerId   String?
+  projectManagerId String?
 
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  productOwner       User?         @relation("ProductOwner", fields: [productOwnerId], references: [id])
-  projectManager     User?         @relation("ProjectManager", fields: [projectManagerId], references: [id])
-  projectTeams       ProjectTeam[]
-  members            User[]
+  productOwner   User?         @relation("ProductOwner", fields: [productOwnerId], references: [id])
+  projectManager User?         @relation("ProjectManager", fields: [projectManagerId], references: [id])
+  projectTeams   ProjectTeam[]
+  members        User[]
 }
 
 model Project {
@@ -197,43 +203,42 @@ model Project {
   endDate     DateTime
   status      ProjectStatus @default(NOT_STARTED)
 
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  teams       ProjectTeam[]
-  tasks       Task[]
+  teams ProjectTeam[]
+  tasks Task[]
 }
 
 model ProjectTeam {
-  id        String   @id @default(cuid())
+  id        String @id @default(cuid())
   teamId    String
   projectId String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  team      Team     @relation(fields: [teamId], references: [id])
-  project   Project  @relation(fields: [projectId], references: [id])
+  team    Team    @relation(fields: [teamId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
 
   @@unique([teamId, projectId])
 }
 
 model Task {
-  id              String   @id @default(cuid())
-  title           String
-  description     String?
-  status          Status   @default(TODO)
-  priority        Priority
-  tags            String?
-  startDate       DateTime
-  endDate         DateTime
-  points          Int
-  projectId       String
-  authorId        String
-  assignedUserId  String?
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String   @id @default(cuid())
+  title          String
+  description    String?
+  status         Status   @default(TODO)
+  priority       Priority
+  tags           String?
+  startDate      DateTime
+  endDate        DateTime
+  points         Int
+  projectId      String
+  authorId       String
+  assignedUserId String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   // Relations
   project         Project          @relation(fields: [projectId], references: [id])
@@ -249,8 +254,8 @@ model TaskAssignment {
   userId String
   taskId String
 
-  user   User @relation(fields: [userId], references: [id])
-  task   Task @relation(fields: [taskId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+  task Task @relation(fields: [taskId], references: [id])
 
   @@unique([userId, taskId])
 }
@@ -261,19 +266,19 @@ model Comment {
   taskId String
   userId String
 
-  task   Task @relation(fields: [taskId], references: [id])
-  user   User @relation(fields: [userId], references: [id])
+  task Task @relation(fields: [taskId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 }
 
 model Attachment {
-  id           String @id @default(cuid())
+  id           String  @id @default(cuid())
   fileUrl      String
   fileName     String?
   taskId       String
   uploadedById String
 
-  task         Task @relation(fields: [taskId], references: [id])
-  uploadedBy   User @relation(fields: [uploadedById], references: [id])
+  task       Task @relation(fields: [taskId], references: [id])
+  uploadedBy User @relation(fields: [uploadedById], references: [id])
 }
 
 enum Status {
@@ -296,3 +301,8 @@ enum ProjectStatus {
   ON_HOLD
 }
 
+enum UserLoginType {
+  EMAIL_PASSWORD
+  GOOGLE
+  GITHUB
+}
