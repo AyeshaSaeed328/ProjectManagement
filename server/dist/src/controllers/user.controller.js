@@ -102,6 +102,7 @@ const createUser = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, v
         subject: "Please verify your email",
         mailgenContent: (0, mail_1.emailVerificationMailgenContent)(newUser.username, `${req.protocol}://${req.get("host")}/api/v1/users/verify-email/${unHashedToken}`),
     });
+    console.log("Email sent");
     const createdUser = yield prisma.user.findUnique({
         where: { id: newUser.id },
         select: {
@@ -113,7 +114,7 @@ const createUser = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, v
     });
     return res
         .status(201)
-        .json(new ApiResponse_1.ApiResponse(201, newUser, "User created successfully"));
+        .json(new ApiResponse_1.ApiResponse(201, createdUser, "User created successfully"));
 }));
 exports.createUser = createUser;
 const loginUser = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -128,7 +129,7 @@ const loginUser = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, vo
         },
     });
     if (!user) {
-        throw new ApiError_1.ApiError(401, "User does not exist");
+        throw new ApiError_1.ApiError(404, "User does not exist");
     }
     if (user.loginType !== client_1.UserLoginType.EMAIL_PASSWORD) {
         throw new ApiError_1.ApiError(400, "You have previously registered using " +
@@ -139,7 +140,7 @@ const loginUser = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, vo
     }
     const isPasswordValid = yield bcrypt_1.default.compare(password, user.passwordHash);
     if (!isPasswordValid) {
-        throw new ApiError_1.ApiError(401, "Invalid credentials");
+        throw new ApiError_1.ApiError(403, "Invalid credentials");
     }
     const { accessToken, refreshToken } = yield generateAccessRefreshToken(user);
     const loggedInUser = yield prisma.user.findUnique({
@@ -238,9 +239,11 @@ const verifyEmail = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, 
             isEmailVerified: true,
         },
     });
-    return res
-        .status(200)
-        .json(new ApiResponse_1.ApiResponse(200, { isEmailVerified: true }, "Email is verified"));
+    //   return res
+    //     .status(200)
+    //     .json(new ApiResponse(200, { isEmailVerified: true }, "Email is verified"));
+    // });
+    return res.redirect(`${process.env.CLIENT_URL}/email-verified`);
 }));
 exports.verifyEmail = verifyEmail;
 const resendEmailVerification = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {

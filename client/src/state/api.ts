@@ -33,6 +33,8 @@ export interface User {
   passwordHash: string;
   refreshToken?: string;
   teamId?: string;
+  emailVerified?: boolean;
+  
 }
 
 export interface Attachment {

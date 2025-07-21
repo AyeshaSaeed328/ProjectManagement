@@ -134,6 +134,7 @@ const createUser = asyncHandler(
         )}/api/v1/users/verify-email/${unHashedToken}`
       ),
     });
+    console.log("Email sent")
 
     const createdUser = await prisma.user.findUnique({
       where: { id: newUser.id },
@@ -147,7 +148,7 @@ const createUser = asyncHandler(
 
     return res
       .status(201)
-      .json(new ApiResponse(201, newUser, "User created successfully"));
+      .json(new ApiResponse(201, createdUser, "User created successfully"));
   }
 );
 
@@ -166,7 +167,7 @@ const loginUser = asyncHandler(
     });
 
     if (!user) {
-      throw new ApiError(401, "User does not exist");
+      throw new ApiError(404, "User does not exist");
     }
 
     if (user.loginType !== UserLoginType.EMAIL_PASSWORD) {
@@ -183,7 +184,7 @@ const loginUser = asyncHandler(
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isPasswordValid) {
-      throw new ApiError(401, "Invalid credentials");
+      throw new ApiError(403, "Invalid credentials");
     }
 
     const { accessToken, refreshToken } = await generateAccessRefreshToken(
@@ -307,10 +308,12 @@ const verifyEmail = asyncHandler(async (req, res) => {
     },
   });
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, { isEmailVerified: true }, "Email is verified"));
-});
+//   return res
+//     .status(200)
+//     .json(new ApiResponse(200, { isEmailVerified: true }, "Email is verified"));
+// });
+return res.redirect(`${process.env.CLIENT_URL}/email-verified`);})
+
 const resendEmailVerification = asyncHandler(async (req, res) => {
   const user = await prisma.user.findUnique({ where: { id: req.user?.id } });
 
