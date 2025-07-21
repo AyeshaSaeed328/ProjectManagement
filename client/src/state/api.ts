@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-// import { fetchAuthSession, getCurrentUser } from "aws-amplify/auth";
+import { fetchBaseQueryWithReauth } from "./fetchBaseQueryWithReauth";
+import { log } from "console";
 
 export interface Project {
   id: string;
@@ -75,23 +76,28 @@ export interface Team {
   projectManagerUserId?: string;
 }
 
+export interface Comment {
+  id: string;
+  content: string;
+  taskId: string;
+  authorUserId: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export const api = createApi({
-  baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
-    credentials: "include", // 👈 ensures cookies (for tokens) are sent
-  }),
+  baseQuery: fetchBaseQueryWithReauth,
   reducerPath: "api",
   tagTypes: ["Projects", "Tasks", "Users", "Teams", "Auth"],
   endpoints: (build) => ({
-    // Authentication Endpoints 👇
 
     registerUser: build.mutation<User, Partial<User>>({
       query: (userData) => ({
-        url: "users",
+        url: "users/register",
         method: "POST",
         body: userData,
       }),
-      invalidatesTags: ["Users"],
+      invalidatesTags: ["Users", "Auth"],
     }),
 
     loginUser: build.mutation<
@@ -115,7 +121,7 @@ export const api = createApi({
     }),
 
     getAuthUser: build.query<User, void>({
-      query: () => "auth/me",
+      query: () => "users/current-user",
       providesTags: ["Auth"],
     }),
     updateUserDetails: build.mutation<User, Partial<User>>({
@@ -126,6 +132,39 @@ export const api = createApi({
       }),
       invalidatesTags: ["Auth", "Users"],
     }),
+    changeCurrentPassword: build.mutation<void, { oldPassword: string; newPassword: string }>({
+      query: (passwords) => ({
+        url: "users/change-password",
+        method: "POST",
+        body: passwords,
+      }),
+      invalidatesTags: ["Auth"],
+    }),
+    resetPassword: build.mutation<void, { email: string }>({
+      query: (email) => ({
+        url: "users/reset-password",
+        method: "POST",
+        body: email,
+      }),
+      invalidatesTags: ["Auth"],
+    }),
+    verifyEmail: build.mutation<void, { token: string }>({
+      query: (token) => ({
+        url: "users/verify-email",
+        method: "POST",
+        body: { token },
+      }),
+      invalidatesTags: ["Auth"],
+    }),
+    resendVerificationEmail: build.mutation<void, { email: string }>({
+      query: (email) => ({
+        url: "users/resend-verification-email",
+        method: "POST",
+        body: email,
+      }),
+      invalidatesTags: ["Auth"],
+    }),
+
 
     getProjects: build.query<Project[], void>({
       query: () => "projects/all",
@@ -186,6 +225,16 @@ export const api = createApi({
 });
 
 export const {
+  useRegisterUserMutation,
+  useLoginUserMutation,
+  useLogoutUserMutation,
+  useGetAuthUserQuery,
+  useUpdateUserDetailsMutation,
+  useChangeCurrentPasswordMutation,
+  useResetPasswordMutation,
+  useVerifyEmailMutation,
+  useResendVerificationEmailMutation,
+
   useGetProjectsQuery,
   useCreateProjectMutation,
   useGetTasksQuery,
@@ -196,4 +245,5 @@ export const {
   useGetTeamsQuery,
   useGetTasksByUserQuery,
   // useGetAuthUserQuery,
+  
 } = api;

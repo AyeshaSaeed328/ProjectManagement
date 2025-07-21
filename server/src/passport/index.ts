@@ -1,6 +1,6 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy, Profile as GoogleProfile } from "passport-google-oauth20";
-import { Strategy as GitHubStrategy, Profile as GitHubProfile } from "passport-github2";
+// import { Strategy as GitHubStrategy, Profile as GitHubProfile } from "passport-github2";
 import { PrismaClient, User as PrismaUser } from "@prisma/client";
 import { ApiError } from "../utils/ApiError";
 import { UserLoginType } from "@prisma/client"; // ✅ Make sure this enum is defined

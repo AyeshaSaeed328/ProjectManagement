@@ -26,7 +26,8 @@ const prisma = new PrismaClient();
 
 const options = {
   httpOnly: true,
-  secure: true,
+  secure: process.env.NODE_ENV === "production"
+
 };
 
 const generateAccessRefreshToken = async (user: User) => {

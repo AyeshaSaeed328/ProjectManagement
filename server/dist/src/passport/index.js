@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const passport_1 = __importDefault(require("passport"));
 const passport_google_oauth20_1 = require("passport-google-oauth20");
+// import { Strategy as GitHubStrategy, Profile as GitHubProfile } from "passport-github2";
 const client_1 = require("@prisma/client");
 const ApiError_1 = require("../utils/ApiError");
 const client_2 = require("@prisma/client"); // ✅ Make sure this enum is defined

@@ -26,7 +26,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prisma = new client_1.PrismaClient();
 const options = {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === "production"
 };
 const generateAccessRefreshToken = (user) => __awaiter(void 0, void 0, void 0, function* () {
     try {

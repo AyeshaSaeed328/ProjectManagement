@@ -34,8 +34,8 @@ const sendEmail = (options) => __awaiter(void 0, void 0, void 0, function* () {
         host: "sandbox.smtp.mailtrap.io",
         port: 2525,
         auth: {
-            user: "e22ae71eeb01dd",
-            pass: "d1a2d0f88f7d42"
+            user: "39a8390678f714",
+            pass: "341b16eaf84639"
         }
     };
     const transporter = nodemailer_1.default.createTransport(transportOptions);
