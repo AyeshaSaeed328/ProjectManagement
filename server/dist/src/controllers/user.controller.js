@@ -31,7 +31,9 @@ const options = {
 const generateAccessRefreshToken = (user) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const accessToken = yield (0, token_1.generateAccessToken)(user);
+        console.log("✅ accessToken", accessToken);
         const refreshToken = yield (0, token_1.generateRefreshToken)(user);
+        console.log("✅ refreshToken", refreshToken);
         yield prisma.user.update({
             where: { id: user.id },
             data: { refreshToken },
@@ -402,6 +404,12 @@ const getCurrentUser = (0, asyncHandler_1.default)((req, res) => __awaiter(void 
 }));
 exports.getCurrentUser = getCurrentUser;
 const handleSocialLogin = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("🧠 req.user:", req.user); // add this line
+    console.log("✅ user on callback", req.user);
+    console.log("✅ session", req.session);
+    if (!req.user) {
+        throw new ApiError_1.ApiError(401, "User not found");
+    }
     const user = yield prisma.user.findUnique({ where: { id: req.user.id } });
     if (!user) {
         throw new ApiError_1.ApiError(404, "User does not exist");

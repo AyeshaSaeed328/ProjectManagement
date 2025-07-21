@@ -33,7 +33,9 @@ const options = {
 const generateAccessRefreshToken = async (user: User) => {
   try {
     const accessToken = await generateAccessToken(user);
+    console.log("✅ accessToken", accessToken);
     const refreshToken = await generateRefreshToken(user);
+    console.log("✅ refreshToken", refreshToken);
     await prisma.user.update({
       where: { id: user.id },
       data: { refreshToken },
@@ -530,6 +532,14 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 })
 
 const handleSocialLogin = asyncHandler(async (req, res) => {
+   console.log("🧠 req.user:", req.user); // add this line
+   console.log("✅ user on callback", req.user);
+console.log("✅ session", req.session);
+
+
+  if (!req.user) {
+    throw new ApiError(401, "User not found");
+  }
   const user = await prisma.user.findUnique({where:{id: req.user!.id}})
 
   if (!user) {

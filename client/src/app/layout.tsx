@@ -1,7 +1,7 @@
+// app/layout.tsx or app/rootLayout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
-import DashboardWrapper from "./dashboardWrapper";
-
+import StoreProvider from './StoreProvider'
 
 
 export const metadata: Metadata = {
@@ -11,15 +11,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
       <body>
-        <DashboardWrapper>{children}</DashboardWrapper>
-
-      </body>
+        <StoreProvider>{children}</StoreProvider></body>
     </html>
   );
 }

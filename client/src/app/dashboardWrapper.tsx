@@ -5,7 +5,6 @@ import Navbar from '@/(components)/Navbar'
 import Sidebar from '@/(components)/Sidebar'
 import {useAppSelector} from './redux'
 import { useEffect } from 'react'
-import StoreProvider from './StoreProvider'
 
 const DashboardLayout = ({children}: {children: React.ReactNode}) => {
   const isSidebarOpen = useAppSelector((state) => state.global.isSidebarOpen,
@@ -41,11 +40,10 @@ useEffect(() => {
 
 const DashboardWrapper = ({children}: {children: React.ReactNode}) => {
   return (
-    <StoreProvider>
+    
       <DashboardLayout>
         {children}
       </DashboardLayout>
-    </StoreProvider>
   ) 
 }
 

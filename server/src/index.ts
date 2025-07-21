@@ -4,12 +4,15 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import session from "express-session";
+import passport from 'passport';
 
 // routes import
 import projectRoutes from "./routes/project.router"
 import userRoutes from "./routes/user.router"
 import teamRoutes from "./routes/team.router"
 import taskRoutes from "./routes/task.router"
+
 
 dotenv.config();
 const app = express();
@@ -19,9 +22,24 @@ app.use(helmet());
 app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use(morgan('common'));
 app.use(bodyParser.json());
-app.use(cors());
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+}));
+
+app.use(
+  session({
+    secret: process.env.EXPRESS_SESSION_SECRET!,
+    resave: true,
+    saveUninitialized: true,
+  })
+); 
+app.use(passport.initialize());
+app.use(passport.session()); // persistent login sessions
 
 
++
 app.get('/', (req, res) => {
   res.send('Welcome to the Project Management API');
 });

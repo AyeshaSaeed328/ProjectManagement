@@ -1,5 +1,14 @@
-import HomePage from "./home/page";
+// app/page.tsx
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
-export default function Home() {
-  return <HomePage />;
+export default async function Page() {
+  const cookieStore = await cookies()
+  const token = cookieStore.get("accessToken")?.value;
+
+  if (token) {
+    redirect("/");
+  } else {
+    redirect("/login");
+  }
 }

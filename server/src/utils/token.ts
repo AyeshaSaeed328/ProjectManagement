@@ -12,6 +12,7 @@ const REFRESH_TOKEN_EXPIRY = process.env.REFRESH_TOKEN_EXPIRY as StringValue || 
 export function generateAccessToken(user: User) 
 {
     
+  
   return jwt.sign(
     {
       id: user.id,
