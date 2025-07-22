@@ -45,3 +45,6 @@ exports.assignTeamToProject = (0, asyncHandler_1.default)((req, res) => __awaite
     }
     return res.status(201).json(new ApiResponse_1.ApiResponse(201, relation, "Team assigned to project successfully"));
 }));
+exports.default = {
+    assignTeamToProject: exports.assignTeamToProject,
+};

@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import asyncHandler from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
-import { PrismaClient, Prisma, User, UserLoginType } from "@prisma/client";
+import { PrismaClient, Prisma, User, UserLoginType, UserRole} from "@prisma/client";
 import { uploadOnCloudinary } from "../utils/uploadToCloud";
 import bcrypt from "bcrypt";
 import {
@@ -105,6 +105,7 @@ const createUser = asyncHandler(
         profilePicture?.url || "https://ui-avatars.com/api/?background=random",
       passwordHash: hashedPassword,
       loginType: UserLoginType.EMAIL_PASSWORD,
+      role: UserRole.USER,
     };
 
     if (teamId) {
@@ -115,26 +116,26 @@ const createUser = asyncHandler(
 
     const newUser = await prisma.user.create({ data: userData });
 
-    const { unHashedToken, hashedToken, tokenExpiry } =
-      generateTemporaryToken();
-    await prisma.user.update({
-      where: { id: newUser.id },
-      data: {
-        emailVerificationToken: hashedToken,
-        emailVerificationExpiry: tokenExpiry,
-      },
-    });
-    await sendEmail({
-      email: newUser?.email,
-      subject: "Please verify your email",
-      mailgenContent: emailVerificationMailgenContent(
-        newUser.username,
-        `${req.protocol}://${req.get(
-          "host"
-        )}/api/v1/users/verify-email/${unHashedToken}`
-      ),
-    });
-    console.log("Email sent")
+    // const { unHashedToken, hashedToken, tokenExpiry } =
+    //   generateTemporaryToken();
+    // await prisma.user.update({
+    //   where: { id: newUser.id },
+    //   data: {
+    //     emailVerificationToken: hashedToken,
+    //     emailVerificationExpiry: tokenExpiry,
+    //   },
+    // });
+    // await sendEmail({
+    //   email: newUser?.email,
+    //   subject: "Please verify your email",
+    //   mailgenContent: emailVerificationMailgenContent(
+    //     newUser.username,
+    //     `${req.protocol}://${req.get(
+    //       "host"
+    //     )}/api/v1/users/verify-email/${unHashedToken}`
+    //   ),
+    // });
+    // console.log("Email sent")
 
     const createdUser = await prisma.user.findUnique({
       where: { id: newUser.id },
@@ -195,9 +196,13 @@ const loginUser = asyncHandler(
       where: { id: user.id },
       select: {
         id: true,
-        email: true,
         username: true,
+        email: true,
         profilePicture: true,
+        refreshToken: true,
+        teamId: true,
+        isEmailVerified: true,
+        role: true,
       },
     });
 
@@ -565,6 +570,26 @@ console.log("✅ session", req.session);
     );
 });
 
+const changeUserRole = asyncHandler(async (req, res) => {
+  const { userId, newRole } = req.body;
+
+  if (!userId || !newRole) {
+    throw new ApiError(400, "User ID and new role are required");
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { role: newRole },
+  });
+
+  return res.status(200).json(new ApiResponse(200, {}, "User role updated successfully"));
+});
 
 export {
   createUser,
@@ -579,5 +604,6 @@ export {
   changeCurrentPassword,
   refreshAccessToken,
   getCurrentUser,
-  handleSocialLogin
+  handleSocialLogin,
+  changeUserRole
 };

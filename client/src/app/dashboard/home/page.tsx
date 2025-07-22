@@ -36,11 +36,12 @@ const taskColumns: GridColDef[] = [
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
 const HomePage = () => {
-//   const {
-//     data: tasks,
-//     isLoading: tasksLoading,
-//     isError: tasksError,
-//   } = useGetTasksQuery({ projectId: "cmcu4mgwq0000j37ouck26tts"});
+
+  const {
+    data: tasks,
+    isLoading: tasksLoading,
+    isError: tasksError,
+  } = useGetTasksQuery({ projectId: ""});
   const { data: projects, isLoading: isProjectsLoading } =
     useGetProjectsQuery();
 

@@ -8,11 +8,6 @@ import {
 import { persistStore } from 'redux-persist'
 import { makeStore, AppStore } from './redux'
 
-
-
-
-
-
 export default function StoreProvider({
   children,
 }: {
@@ -28,6 +23,7 @@ export default function StoreProvider({
   return (
     <Provider store={storeRef.current}>
       <PersistGate loading={null} persistor={persistor}>
+        
         {children}
       </PersistGate>
     </Provider>

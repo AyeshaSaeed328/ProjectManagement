@@ -157,6 +157,7 @@ model User {
   profilePicture          String?
   teamId                  String?
   passwordHash            String
+  role                    UserRole      @default(USER)
   refreshToken            String?
   loginType               UserLoginType @default(EMAIL_PASSWORD)
   isEmailVerified         Boolean       @default(false)
@@ -175,22 +176,16 @@ model User {
   attachments       Attachment[]
   comments          Comment[]
   team              Team?            @relation(fields: [teamId], references: [id])
-  productOwnedTeams Team[]           @relation("ProductOwner")
-  managedTeams      Team[]           @relation("ProjectManager")
+  managedProjects   Project[]        @relation("ProjectManager")
+  leadOfTeams       Team[]           @relation("TeamLead")
 }
 
 model Team {
   id               String  @id @default(cuid())
   teamName         String
-  productOwnerId   String?
-  projectManagerId String?
+  teamLead        User?   @relation("TeamLead" ,fields: [teamLeadId], references: [id])
+  teamLeadId      String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  productOwner   User?         @relation("ProductOwner", fields: [productOwnerId], references: [id])
-  projectManager User?         @relation("ProjectManager", fields: [projectManagerId], references: [id])
   projectTeams   ProjectTeam[]
   members        User[]
 }
@@ -202,12 +197,14 @@ model Project {
   startDate   DateTime
   endDate     DateTime
   status      ProjectStatus @default(NOT_STARTED)
+  managerId   String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   teams ProjectTeam[]
   tasks Task[]
+  manager User @relation("ProjectManager", fields: [managerId], references: [id])
 }
 
 model ProjectTeam {
@@ -305,4 +302,9 @@ enum UserLoginType {
   EMAIL_PASSWORD
   GOOGLE
   GITHUB
+}
+
+enum UserRole {
+  MANAGER
+  USER
 }

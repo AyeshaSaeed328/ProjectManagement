@@ -17,6 +17,7 @@ const asyncHandler_1 = __importDefault(require("../utils/asyncHandler"));
 const ApiError_1 = require("../utils/ApiError");
 const ApiResponse_1 = require("../utils/ApiResponse");
 const client_1 = require("@prisma/client");
+const client_2 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 // GET all projects with relations
 const getAllProjects = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -40,14 +41,17 @@ const getAllProjects = (0, asyncHandler_1.default)((req, res) => __awaiter(void 
 exports.getAllProjects = getAllProjects;
 // CREATE project
 const createProject = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { name, description, startDate, endDate, status } = req.body;
+    const { name, description, startDate, endDate, status, managerId } = req.body;
     const newProject = yield prisma.project.create({
         data: {
             name,
             description,
             startDate: new Date(startDate),
             endDate: new Date(endDate),
-            status
+            status,
+            manager: {
+                connect: { id: managerId },
+            },
         },
     });
     if (!newProject) {
@@ -58,6 +62,9 @@ const createProject = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0
 exports.createProject = createProject;
 // DELETE project
 const deleteProject = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    if ((req === null || req === void 0 ? void 0 : req.user.role) !== client_2.UserRole.MANAGER) {
+        throw new ApiError_1.ApiError(403, "Forbidden");
+    }
     const { id } = req.params;
     const deleted = yield prisma.project.delete({
         where: { id },

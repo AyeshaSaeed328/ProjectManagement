@@ -16,6 +16,7 @@ router.post("/refresh-token", user_controller_1.refreshAccessToken);
 router.get("/verify-email/:verificationToken", user_controller_1.verifyEmail);
 router.post("/forgot-password", user_controller_1.forgotPasswordRequest);
 router.post("/reset-password/:resetToken", user_controller_1.resetForgottenPassword);
+router.post("/change-role", user_controller_1.changeUserRole);
 //Secured Routes
 router.post("/logout", auth_middleware_1.verifyJWT, user_controller_1.logoutUser);
 router.get("/current-user", auth_middleware_1.verifyJWT, user_controller_1.getCurrentUser);

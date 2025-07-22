@@ -12,6 +12,7 @@ import projectRoutes from "./routes/project.router"
 import userRoutes from "./routes/user.router"
 import teamRoutes from "./routes/team.router"
 import taskRoutes from "./routes/task.router"
+import projectTeamRoutes from "./routes/project-team.router"
 
 
 dotenv.config();
@@ -48,6 +49,7 @@ app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/teams", teamRoutes);
 app.use("/api/v1/tasks", taskRoutes);
+app.use("/api/v1/project-team", projectTeamRoutes);
 
 const port = process.env.PORT || 4000;
 app.listen(port, () => {

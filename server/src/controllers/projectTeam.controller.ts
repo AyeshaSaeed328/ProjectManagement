@@ -39,3 +39,7 @@ export const assignTeamToProject = asyncHandler(async (req: Request, res: Respon
     return res.status(201).json(new ApiResponse<ProjectTeam>(201, relation, "Team assigned to project successfully"));
 
 });
+
+export default {
+  assignTeamToProject,
+}

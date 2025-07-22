@@ -4,7 +4,7 @@ import { ApiError } from "../utils/ApiError";
 import { ApiResponse } from "../utils/ApiResponse";
 import { PrismaClient, Prisma } from "@prisma/client";
 import { Project } from "@prisma/client";
-
+import { UserRole } from "@prisma/client";
 const prisma = new PrismaClient();
 
 type ProjectWithRelations = Prisma.ProjectGetPayload<{
@@ -53,7 +53,7 @@ const getAllProjects = asyncHandler(
 // CREATE project
 const createProject = asyncHandler(
   async (req: Request, res: Response): Promise<Response<ApiResponse<Project>>> => {
-    const { name, description, startDate, endDate, status } = req.body;
+    const { name, description, startDate, endDate, status, managerId } = req.body;
 
     const newProject = await prisma.project.create({
       data: {
@@ -61,7 +61,10 @@ const createProject = asyncHandler(
         description,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
-        status
+        status,
+        manager: {
+          connect: { id: managerId },
+        },
       },
     });
 
@@ -78,6 +81,9 @@ const createProject = asyncHandler(
 // DELETE project
 const deleteProject = asyncHandler(
   async (req: Request, res: Response): Promise<Response<ApiResponse<Project>>> => {
+    if (req?.user!.role !== UserRole.MANAGER) {
+      throw new ApiError(403, "Forbidden");
+    }
     const { id } = req.params;
 
     const deleted = await prisma.project.delete({

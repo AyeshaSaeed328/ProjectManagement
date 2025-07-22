@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { fetchBaseQueryWithReauth } from "./fetchBaseQueryWithReauth";
-import { log } from "console";
+
 
 export interface Project {
   id: string;
@@ -26,14 +26,15 @@ export enum Status {
 }
 
 export interface User {
-  userId?: string;
+  id: string;
   username: string;
   email: string;
-  profilePictureUrl?: string;
-  passwordHash: string;
+  profilePicture?: string;
   refreshToken?: string;
   teamId?: string;
-  emailVerified?: boolean;
+  isEmailVerified?: boolean;
+  role?: "USER" | "MANAGER";
+
   
 }
 
@@ -142,14 +143,21 @@ export const api = createApi({
       }),
       invalidatesTags: ["Auth"],
     }),
-    resetPassword: build.mutation<void, { email: string }>({
-      query: (email) => ({
-        url: "users/reset-password",
-        method: "POST",
-        body: email,
-      }),
-      invalidatesTags: ["Auth"],
-    }),
+    forgotPassword: build.mutation<void, { email: string }>({
+  query: (body) => ({
+    url: "users/forgot-password",
+    method: "POST",
+    body,
+  }),
+}),
+resetPassword: build.mutation<void, { resetToken: string; newPassword: string }>({
+  query: ({ resetToken, newPassword }) => ({
+    url: `users/reset-password/${resetToken}`,
+    method: "POST",
+    body: { newPassword },
+  }),
+}),
+
     verifyEmail: build.mutation<void, { token: string }>({
       query: (token) => ({
         url: "users/verify-email",
@@ -180,14 +188,14 @@ export const api = createApi({
       }),
       invalidatesTags: ["Projects"],
     }),
-    getTasks: build.query<Task[], { projectId: number }>({
+    getTasks: build.query<Task[], { projectId: string }>({
       query: ({ projectId }) => `tasks?projectId=${projectId}`,
       providesTags: (result) =>
         result
           ? result.map(({ id }) => ({ type: "Tasks" as const, id }))
           : [{ type: "Tasks" as const }],
     }),
-    getTasksByUser: build.query<Task[], number>({
+    getTasksByUser: build.query<Task[], string>({
       query: (userId) => `tasks/user/${userId}`,
       providesTags: (result, error, userId) =>
         result
@@ -233,6 +241,7 @@ export const {
   useGetAuthUserQuery,
   useUpdateUserDetailsMutation,
   useChangeCurrentPasswordMutation,
+  useForgotPasswordMutation,
   useResetPasswordMutation,
   useVerifyEmailMutation,
   useResendVerificationEmailMutation,

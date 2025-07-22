@@ -10,7 +10,7 @@ export default async function LoginPage() {
   const token = cookieStore.get("accessToken")?.value;
 
   if (token) {
-    redirect("/protected");
+    redirect("/dashboard");
   }
 
   return (

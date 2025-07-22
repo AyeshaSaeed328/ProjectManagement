@@ -16,6 +16,7 @@ const project_router_1 = __importDefault(require("./routes/project.router"));
 const user_router_1 = __importDefault(require("./routes/user.router"));
 const team_router_1 = __importDefault(require("./routes/team.router"));
 const task_router_1 = __importDefault(require("./routes/task.router"));
+const project_team_router_1 = __importDefault(require("./routes/project-team.router"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
@@ -43,6 +44,7 @@ app.use("/api/v1/projects", project_router_1.default);
 app.use("/api/v1/users", user_router_1.default);
 app.use("/api/v1/teams", team_router_1.default);
 app.use("/api/v1/tasks", task_router_1.default);
+app.use("/api/v1/project-team", project_team_router_1.default);
 const port = process.env.PORT || 4000;
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);

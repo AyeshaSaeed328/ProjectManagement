@@ -7,19 +7,10 @@ import { Task, TaskAssignment } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-type TaskWithRelations = Prisma.TaskGetPayload<{
-  include: {
-    project: true;
-    author: true;
-    taskAssignments: true;
-    comments: true;
-    attachments: true;
-  };
-}>;
 
-const getUserTasks = asyncHandler(
-  async (req: Request, res: Response): Promise<Response<ApiResponse<TaskWithRelations[]>>> => {
-    const userId = "cmcuahygc0000j3v8wz0l1yy9";
+const getTasksAssignedByUser = asyncHandler(
+  async (req: Request, res: Response): Promise<Response<ApiResponse<Task[]>>> => {
+    const userId = req.user?.id;
 
     const tasks = await prisma.task.findMany({
       where: { authorId: userId },
@@ -39,7 +30,7 @@ const getUserTasks = asyncHandler(
     return res
       .status(200)
       .json(
-        new ApiResponse<TaskWithRelations[]>(
+        new ApiResponse<Task[]>(
           200,
           tasks,
           "User tasks fetched successfully"
@@ -47,6 +38,29 @@ const getUserTasks = asyncHandler(
       );
   }
 );
+
+const getTasksAssignedToUser = asyncHandler(
+  async (req:Request, res: Response): Promise<Response<ApiResponse<Task[]>>> =>{
+    const userId = req.user?.id;
+    const tasks = await prisma.task.findMany({
+      where: {
+        taskAssignments: {
+          some: {
+            userId: userId
+          }
+        }
+      },
+      include: {
+        project: true,
+        author: true,
+        comments: true,
+        attachments: true,
+      }
+    });
+    return res.status(200).json(new ApiResponse<Task[]>(200, tasks, "User tasks fetched successfully"));
+
+  }
+)
 
 const createTask = asyncHandler(
   async (req: Request, res: Response): Promise<Response<ApiResponse<Task>>> => {
@@ -109,18 +123,18 @@ const addUserToTask = asyncHandler(
     }
 
     // ✅ Check if assignment already exists
-    // const existingAssignment = await prisma.taskAssignment.findUnique({
-    //   where: {
-    //     taskId_userId: {
-    //       taskId,
-    //       userId,
-    //     },
-    //   },
-    // });
+    const existingAssignment = await prisma.taskAssignment.findUnique({
+      where: {
+        userId_taskId: {
+          taskId,
+          userId,
+        },
+      },
+    });
 
-    // if (existingAssignment) {
-    //   throw new ApiError(409, "User is already assigned to this task");
-    // }
+    if (existingAssignment) {
+      throw new ApiError(409, "User is already assigned to this task");
+    }
 
     // ✅ Create the assignment
     const taskAssignment = await prisma.taskAssignment.create({
@@ -142,7 +156,8 @@ const addUserToTask = asyncHandler(
 
 
 export {
-  getUserTasks,
+  getTasksAssignedByUser,
+  getTasksAssignedToUser,
   createTask,
   addUserToTask
 };

@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.handleSocialLogin = exports.getCurrentUser = exports.refreshAccessToken = exports.changeCurrentPassword = exports.resetForgottenPassword = exports.forgotPasswordRequest = exports.resendEmailVerification = exports.verifyEmail = exports.logoutUser = exports.loginUser = exports.updateUserDetails = exports.getAllUsers = exports.createUser = void 0;
+exports.changeUserRole = exports.handleSocialLogin = exports.getCurrentUser = exports.refreshAccessToken = exports.changeCurrentPassword = exports.resetForgottenPassword = exports.forgotPasswordRequest = exports.resendEmailVerification = exports.verifyEmail = exports.logoutUser = exports.loginUser = exports.updateUserDetails = exports.getAllUsers = exports.createUser = void 0;
 const asyncHandler_1 = __importDefault(require("../utils/asyncHandler"));
 const ApiError_1 = require("../utils/ApiError");
 const ApiResponse_1 = require("../utils/ApiResponse");
@@ -82,6 +82,7 @@ const createUser = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, v
         profilePicture: (profilePicture === null || profilePicture === void 0 ? void 0 : profilePicture.url) || "https://ui-avatars.com/api/?background=random",
         passwordHash: hashedPassword,
         loginType: client_1.UserLoginType.EMAIL_PASSWORD,
+        role: client_1.UserRole.USER,
     };
     if (teamId) {
         userData.team = {
@@ -89,20 +90,26 @@ const createUser = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, v
         };
     }
     const newUser = yield prisma.user.create({ data: userData });
-    const { unHashedToken, hashedToken, tokenExpiry } = (0, token_1.generateTemporaryToken)();
-    yield prisma.user.update({
-        where: { id: newUser.id },
-        data: {
-            emailVerificationToken: hashedToken,
-            emailVerificationExpiry: tokenExpiry,
-        },
-    });
-    yield (0, mail_1.sendEmail)({
-        email: newUser === null || newUser === void 0 ? void 0 : newUser.email,
-        subject: "Please verify your email",
-        mailgenContent: (0, mail_1.emailVerificationMailgenContent)(newUser.username, `${req.protocol}://${req.get("host")}/api/v1/users/verify-email/${unHashedToken}`),
-    });
-    console.log("Email sent");
+    // const { unHashedToken, hashedToken, tokenExpiry } =
+    //   generateTemporaryToken();
+    // await prisma.user.update({
+    //   where: { id: newUser.id },
+    //   data: {
+    //     emailVerificationToken: hashedToken,
+    //     emailVerificationExpiry: tokenExpiry,
+    //   },
+    // });
+    // await sendEmail({
+    //   email: newUser?.email,
+    //   subject: "Please verify your email",
+    //   mailgenContent: emailVerificationMailgenContent(
+    //     newUser.username,
+    //     `${req.protocol}://${req.get(
+    //       "host"
+    //     )}/api/v1/users/verify-email/${unHashedToken}`
+    //   ),
+    // });
+    // console.log("Email sent")
     const createdUser = yield prisma.user.findUnique({
         where: { id: newUser.id },
         select: {
@@ -147,9 +154,13 @@ const loginUser = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, vo
         where: { id: user.id },
         select: {
             id: true,
-            email: true,
             username: true,
+            email: true,
             profilePicture: true,
+            refreshToken: true,
+            teamId: true,
+            isEmailVerified: true,
+            role: true,
         },
     });
     return res
@@ -427,3 +438,19 @@ const handleSocialLogin = (0, asyncHandler_1.default)((req, res) => __awaiter(vo
     `${process.env.CLIENT_SSO_REDIRECT_URL}?accessToken=${accessToken}&refreshToken=${refreshToken}`);
 }));
 exports.handleSocialLogin = handleSocialLogin;
+const changeUserRole = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { userId, newRole } = req.body;
+    if (!userId || !newRole) {
+        throw new ApiError_1.ApiError(400, "User ID and new role are required");
+    }
+    const user = yield prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+        throw new ApiError_1.ApiError(404, "User not found");
+    }
+    yield prisma.user.update({
+        where: { id: userId },
+        data: { role: newRole },
+    });
+    return res.status(200).json(new ApiResponse_1.ApiResponse(200, {}, "User role updated successfully"));
+}));
+exports.changeUserRole = changeUserRole;

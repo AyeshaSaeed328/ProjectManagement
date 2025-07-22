@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import StoreProvider from './StoreProvider'
+import ClientAuthLoader from "./ClientAuthLoader";
 
 
 export const metadata: Metadata = {
@@ -17,7 +18,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <StoreProvider>{children}</StoreProvider></body>
+        <StoreProvider>
+          <ClientAuthLoader />{children}</StoreProvider></body>
     </html>
   );
 }

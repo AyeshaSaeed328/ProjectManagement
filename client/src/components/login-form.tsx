@@ -9,9 +9,11 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useLoginUserMutation } from "@/state/api";
+import { useLoginUserMutation, useForgotPasswordMutation, useResetPasswordMutation } from "@/state/api";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useAppDispatch } from "@/app/redux";
+import { setAuthLoading, setAuthUser, clearAuth } from "@/state";
 
 export function LoginForm() {
   const {
@@ -22,28 +24,37 @@ export function LoginForm() {
     resolver: zodResolver(loginSchema),
   });
   const router = useRouter();
+  const dispatch = useAppDispatch();
 
   const [loginUser] = useLoginUserMutation();
+  const [sendForgotPassword] = useForgotPasswordMutation();
   const [formError, setFormError] = useState<string | null>(null);
 
  const onSubmit = async (data: LoginSchema) => {
   setFormError(null);
+  dispatch(setAuthLoading(true))
 
   try {
-    const response = await loginUser(data).unwrap();
 
-    const user = response?.user;
+    const res = await loginUser(data).unwrap();
+    const user = res.user
+    dispatch(setAuthUser(user))
+
+    // const user = response.data?.user;
+    // console.log("aaaa")
+    // console.log(user)
     if (!user) {
       setFormError("User data missing in response");
       return;
     }
 
-    if (!user.emailVerified) {
+    if (!user?.isEmailVerified) {
       router.push("/verify-email");
     } else {
       router.push("/dashboard");
     }
   } catch (error: any) {
+    dispatch(clearAuth())
     // console.error("Login error:", error);
 
     const status = error?.status;
@@ -99,9 +110,9 @@ export function LoginForm() {
         <div className="grid gap-3">
           <div className="flex items-center">
             <Label htmlFor="password">Password</Label>
-            <a href="#" className="ml-auto text-sm underline-offset-4 hover:underline">
+            <Link href="/forgot-password" className="ml-auto text-sm underline-offset-4 hover:underline">
               Forgot your password?
-            </a>
+            </Link>
           </div>
           <Input
             id="password"

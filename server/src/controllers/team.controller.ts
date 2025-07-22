@@ -7,43 +7,20 @@ import { log } from "console";
 
 const prisma = new PrismaClient();
 
-type TeamWithRelation = Prisma.TeamGetPayload<{
-  include: {
-    members: true;
-    projectTeams: true;
-    productOwner: {
-      select: {
-        username: true;
-        profilePicture: true;
-      };
-    };
-    projectManager: {
-      select: {
-        username: true;
-        profilePicture: true;
-      };
-    };
-  };
-}>;
 
 const getAllTeams = asyncHandler(
-  async (req: Request, res: Response): Promise<Response<ApiResponse<TeamWithRelation[]>>> => {
+  async (req: Request, res: Response): Promise<Response<ApiResponse<Team[]>>> => {
     const teams = await prisma.team.findMany({
       include: {
         members: true,
         projectTeams: true,
-        productOwner: {
+        teamLead: {
           select: {
             username: true,
             profilePicture: true
           }
         },
-        projectManager: {
-          select: {
-            username: true,
-            profilePicture: true
-          }
-        }
+        
       }
     });
 
@@ -56,16 +33,14 @@ const getAllTeams = asyncHandler(
 const createTeam = asyncHandler(
   async (req:Request, res: Response): Promise<Response<ApiResponse<Team>>> => {
     
-  const { teamName, productOwnerId, projectManagerId } = req.body;
+  const { teamName, teamLeadId } = req.body;
 
   const newTeam = await prisma.team.create({
     data: {
       teamName,
-      productOwner: {
-        connect: { id: productOwnerId },
-      },
-      projectManager: {
-        connect: { id: projectManagerId },
+     
+      teamLead: {
+        connect: { id: teamLeadId },
       },
     },
   });
@@ -82,7 +57,7 @@ const createTeam = asyncHandler(
 const updateTeam = asyncHandler(
   async (req: Request, res: Response): Promise<Response<ApiResponse<Team>>> => {
     const { id } = req.params;
-    const { teamName, productOwnerId, projectManagerId } = req.body;
+    const { teamName, teamLeadId } = req.body;
     if (!id) {
       throw new ApiError(400, "Missing team ID");
     }
@@ -92,16 +67,12 @@ const updateTeam = asyncHandler(
     }
     const data: Prisma.TeamUpdateInput = {};
     if (teamName) data.teamName = teamName;
-    if (productOwnerId) {
-      data.productOwner = {
-        connect: { id: productOwnerId },
+    if (teamLeadId) {
+      data.teamLead = {
+        connect: { id: teamLeadId },
       };
     }
-    if (projectManagerId) {
-      data.projectManager = {
-        connect: { id: projectManagerId },
-      };
-    }
+    
     const updatedTeam = await prisma.team.update({
       where: { id },
       data,
