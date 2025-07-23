@@ -22,6 +22,8 @@ body,
 }
 
 /* TIMELINE STYLING */
+
+
 .timeline ._3_ygE {
   @apply rounded-tl-md border border-r-0 border-[#e6e4e4] dark:border-stroke-dark;
 }
@@ -59,6 +61,17 @@ body,
 }
 .timeline ._29NTg {
   @apply dark:text-neutral-500;
+}
+
+/* You may need to be more specific if this doesn’t take effect */
+.gantt .task-list-header .task-list-header-row > div:first-child,
+.gantt .task-list .task-list-item > div:first-child {
+  width: 200px !important;
+}
+
+.gantt .task-list-header .task-list-header-row > div:not(:first-child),
+.gantt .task-list .task-list-item > div:not(:first-child) {
+  width: 100px !important;
 }
 
 ::-webkit-scrollbar {

@@ -11,6 +11,9 @@ const prisma = new PrismaClient();
 const getTasksAssignedByUser = asyncHandler(
   async (req: Request, res: Response): Promise<Response<ApiResponse<Task[]>>> => {
     const userId = req.user?.id;
+    if (!userId) {
+      throw new ApiError(400, "User ID is required");
+    }
 
     const tasks = await prisma.task.findMany({
       where: { authorId: userId },
@@ -42,6 +45,9 @@ const getTasksAssignedByUser = asyncHandler(
 const getTasksAssignedToUser = asyncHandler(
   async (req:Request, res: Response): Promise<Response<ApiResponse<Task[]>>> =>{
     const userId = req.user?.id;
+    if (!userId) {
+      throw new ApiError(400, "User ID is required");
+    }
     const tasks = await prisma.task.findMany({
       where: {
         taskAssignments: {
@@ -154,10 +160,66 @@ const addUserToTask = asyncHandler(
   }
 );
 
+const updateTaskInfo = asyncHandler(
+  async (req: Request, res: Response): Promise<Response<ApiResponse<Task>>> => {
+    const { id } = req.params;
+    const {
+      title,
+      description,
+      priority,
+      status,
+      tags,
+      startDate,
+      endDate,
+      points,
+      projectId,
+      authorId,
+      assignedUserIds = [],
+    } = req.body;
+
+    if (!id) {
+      throw new ApiError(400, "Task ID is required");
+    }
+
+    const task = await prisma.task.update({
+      where: { id },
+      data: {
+        title,
+        description,
+        priority,
+        status,
+        tags,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        points,
+        projectId,
+        authorId,
+        taskAssignments: {
+          create: assignedUserIds.map((userId: string) => ({ userId })),
+        },
+      },
+      include: {
+        taskAssignments: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+
+    if (!task) {
+      throw new ApiError(404, "Task not found");
+    }
+
+    return res.status(200).json(new ApiResponse<Task>(200, task, "Task updated successfully"));
+  }
+);
+
 
 export {
   getTasksAssignedByUser,
   getTasksAssignedToUser,
   createTask,
-  addUserToTask
+  addUserToTask,
+  updateTaskInfo
 };

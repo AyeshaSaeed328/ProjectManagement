@@ -76,10 +76,10 @@ const Sidebar = () => {
         <NavItem icon={MoreHorizontal} label="More" /> */}
       
       <nav className="z-10 w-full">
-          <NavItem icon={Home} label="Home" href="/" />
-          <NavItem icon={Briefcase} label="Timeline" href="/timeline" />
-          <NavItem icon={User} label="Users" href="/users" />
-          <NavItem icon={Users} label="Teams" href="/teams" />
+          <NavItem icon={Home} label="Home" href="/dashboard" />
+          <NavItem icon={Briefcase} label="Timeline" href="/dashboard/timeline" />
+          <NavItem icon={User} label="Users" href="/dashboard/users" />
+          <NavItem icon={Users} label="Teams" href="/dashboard/teams" />
         </nav>
         </div>
 

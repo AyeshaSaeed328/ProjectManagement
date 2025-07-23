@@ -1,12 +1,14 @@
 import {Router} from "express"
-import {getTasksAssignedByUser, getTasksAssignedToUser, createTask, addUserToTask} from "../controllers/task.controller"
+import {getTasksAssignedByUser, getTasksAssignedToUser, createTask, addUserToTask, updateTaskInfo} from "../controllers/task.controller"
+import { verifyJWT } from "../middlewares/auth.middleware";
 
 const router = Router();
 
-router.get("/assigned-by-me", getTasksAssignedByUser);
-router.get("/assigned-to-me", getTasksAssignedToUser);
-router.post("/create", createTask);
-router.post("/add-user", addUserToTask);
+router.get("/assigned-by-me", verifyJWT, getTasksAssignedByUser);
+router.get("/assigned-to-me", verifyJWT, getTasksAssignedToUser);
+router.post("/create", verifyJWT, createTask);
+router.post("/add-user", verifyJWT, addUserToTask);
+router.patch("/update/:id", verifyJWT, updateTaskInfo);
 
 
 

@@ -13,17 +13,17 @@ const ModalNewTask = ({ isOpen, onClose, id = null }: Props) => {
   const [createTask, { isLoading }] = useCreateTaskMutation();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [status, setStatus] = useState<Status>(Status.ToDo);
-  const [priority, setPriority] = useState<Priority>(Priority.Backlog);
+  const [status, setStatus] = useState<Status>(Status.TODO);
+  const [priority, setPriority] = useState<Priority>(Priority.MEDIUM);
   const [tags, setTags] = useState("");
   const [startDate, setStartDate] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [authorUserId, setAuthorUserId] = useState("");
+  const [authorId, setauthorId] = useState("");
   const [assignedUserId, setAssignedUserId] = useState("");
   const [projectId, setProjectId] = useState("");
 
   const handleSubmit = async () => {
-    if (!title || !authorUserId || !(id !== null || projectId)) return;
+    if (!title || !authorId || !(id !== null || projectId)) return;
 
     const formattedStartDate = formatISO(new Date(startDate), {
       representation: "complete",
@@ -40,14 +40,14 @@ const ModalNewTask = ({ isOpen, onClose, id = null }: Props) => {
       tags,
       startDate: formattedStartDate,
       dueDate: formattedDueDate,
-      authorUserId: parseInt(authorUserId),
-      assignedUserId: parseInt(assignedUserId),
-      projectId: id !== null ? Number(id) : Number(projectId),
+      authorId,
+      // assignedUserId: parseInt(assignedUserId),
+      projectId
     });
   };
 
   const isFormValid = () => {
-    return title && authorUserId && !(id !== null || projectId);
+    return title && authorId && !(id !== null || projectId);
   };
 
   const selectStyles =
@@ -87,10 +87,9 @@ const ModalNewTask = ({ isOpen, onClose, id = null }: Props) => {
             }
           >
             <option value="">Select Status</option>
-            <option value={Status.ToDo}>To Do</option>
-            <option value={Status.WorkInProgress}>Work In Progress</option>
-            <option value={Status.UnderReview}>Under Review</option>
-            <option value={Status.Completed}>Completed</option>
+            <option value={Status.TODO}>To Do</option>
+            <option value={Status.IN_PROGRESS}>Work In Progress</option>
+            <option value={Status.DONE}>Completed</option>
           </select>
           <select
             className={selectStyles}
@@ -100,11 +99,10 @@ const ModalNewTask = ({ isOpen, onClose, id = null }: Props) => {
             }
           >
             <option value="">Select Priority</option>
-            <option value={Priority.Urgent}>Urgent</option>
-            <option value={Priority.High}>High</option>
-            <option value={Priority.Medium}>Medium</option>
-            <option value={Priority.Low}>Low</option>
-            <option value={Priority.Backlog}>Backlog</option>
+            <option value={Priority.CRITICAL}>Urgent</option>
+            <option value={Priority.HIGH}>High</option>
+            <option value={Priority.MEDIUM}>Medium</option>
+            <option value={Priority.LOW}>Low</option>
           </select>
         </div>
         <input
@@ -133,8 +131,8 @@ const ModalNewTask = ({ isOpen, onClose, id = null }: Props) => {
           type="text"
           className={inputStyles}
           placeholder="Author User ID"
-          value={authorUserId}
-          onChange={(e) => setAuthorUserId(e.target.value)}
+          value={authorId}
+          onChange={(e) => setauthorId(e.target.value)}
         />
         <input
           type="text"

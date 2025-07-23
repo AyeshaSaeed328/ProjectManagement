@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import session from "express-session";
 import passport from 'passport';
+import cookieParser from 'cookie-parser';
 
 // routes import
 import projectRoutes from "./routes/project.router"
@@ -39,6 +40,7 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session()); // persistent login sessions
 
+app.use(cookieParser());
 
 +
 app.get('/', (req, res) => {

@@ -2,9 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const task_controller_1 = require("../controllers/task.controller");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
 const router = (0, express_1.Router)();
-router.get("/assigned-by-me", task_controller_1.getTasksAssignedByUser);
-router.get("/assigned-to-me", task_controller_1.getTasksAssignedToUser);
-router.post("/create", task_controller_1.createTask);
-router.post("/add-user", task_controller_1.addUserToTask);
+router.get("/assigned-by-me", auth_middleware_1.verifyJWT, task_controller_1.getTasksAssignedByUser);
+router.get("/assigned-to-me", auth_middleware_1.verifyJWT, task_controller_1.getTasksAssignedToUser);
+router.post("/create", auth_middleware_1.verifyJWT, task_controller_1.createTask);
+router.post("/add-user", auth_middleware_1.verifyJWT, task_controller_1.addUserToTask);
+router.patch("/update/:id", auth_middleware_1.verifyJWT, task_controller_1.updateTaskInfo);
 exports.default = router;

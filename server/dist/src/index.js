@@ -11,6 +11,7 @@ const helmet_1 = __importDefault(require("helmet"));
 const morgan_1 = __importDefault(require("morgan"));
 const express_session_1 = __importDefault(require("express-session"));
 const passport_1 = __importDefault(require("passport"));
+const cookie_parser_1 = __importDefault(require("cookie-parser"));
 // routes import
 const project_router_1 = __importDefault(require("./routes/project.router"));
 const user_router_1 = __importDefault(require("./routes/user.router"));
@@ -37,6 +38,7 @@ app.use((0, express_session_1.default)({
 }));
 app.use(passport_1.default.initialize());
 app.use(passport_1.default.session()); // persistent login sessions
+app.use((0, cookie_parser_1.default)());
 +app.get('/', (req, res) => {
     res.send('Welcome to the Project Management API');
 });

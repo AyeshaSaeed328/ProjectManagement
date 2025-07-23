@@ -1,15 +1,14 @@
 "use client";
-
 import {
   Priority,
   Project,
   Task,
   useGetProjectsQuery,
-  useGetTasksQuery,
+  useGetTasksAssignedByUserQuery,
+  useGetTasksAssignedToUserQuery
 } from "@/state/api";
 import React from "react";
 import { useAppSelector } from "../../redux";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import Header from "@/(components)/Header";
 import {
   Bar,
@@ -24,51 +23,55 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { dataGridClassNames, dataGridSxStyles } from "@/lib/utils";
+import { DataTable } from "@/components/data-table";
 
-const taskColumns: GridColDef[] = [
-  { field: "title", headerName: "Title", width: 200 },
-  { field: "status", headerName: "Status", width: 150 },
-  { field: "priority", headerName: "Priority", width: 150 },
-  { field: "dueDate", headerName: "Due Date", width: 150 },
-];
+import { taskColumns } from "@/components/data-table";
+
+
+
+
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
 const HomePage = () => {
-
+  const isAuthenticated = useAppSelector((state)=>state.global.auth.isAuthenticated)
   const {
     data: tasks,
     isLoading: tasksLoading,
     isError: tasksError,
-  } = useGetTasksQuery({ projectId: ""});
+  } = useGetTasksAssignedByUserQuery(undefined, {
+  skip: !isAuthenticated,
+});
   const { data: projects, isLoading: isProjectsLoading } =
     useGetProjectsQuery();
 
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
 
+
   if (isProjectsLoading) return <div>Loading..</div>;
   if (!projects) return <div>Error fetching data</div>;
+let priorityCount: Record<string, number> = {};
+  if (tasks) {
+  priorityCount = tasks.data.reduce(
+    (acc: Record<string, number>, task: Task) => {
+      const { priority } = task;
+      acc[priority as Priority] = (acc[priority as Priority] || 0) + 1;
+      return acc;
+    },
+    {}
+  );
+}
 
-//   const priorityCount = tasks.reduce(
-//     (acc: Record<string, number>, task: Task) => {
-//       const { priority } = task;
-//       acc[priority as Priority] = (acc[priority as Priority] || 0) + 1;
-//       return acc;
-//     },
-//     {},
-//   );
+  const taskDistribution = Object.keys(priorityCount).map((key) => ({
+    name: key,
+    count: priorityCount[key],
+  }));
 
-//   const taskDistribution = Object.keys(priorityCount).map((key) => ({
-//     name: key,
-//     count: priorityCount[key],
-//   }));
-
-  const projectArray = Array.isArray(projects) ? projects : [];
+  const projectArray = Array.isArray(projects.data) ? projects.data : [];
 
 const statusCount = projectArray.reduce(
   (acc: Record<string, number>, project: Project) => {
-    const status = project.endDate ? "Completed" : "Active";
+    const status = project.status;
     acc[status] = (acc[status] || 0) + 1;
     return acc;
   },
@@ -102,7 +105,7 @@ const statusCount = projectArray.reduce(
           <h3 className="mb-4 text-lg font-semibold dark:text-white">
             Task Priority Distribution
           </h3>
-          {/* <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={300}>
             <BarChart data={taskDistribution}>
               <CartesianGrid
                 strokeDasharray="3 3"
@@ -119,7 +122,7 @@ const statusCount = projectArray.reduce(
               <Legend />
               <Bar dataKey="count" fill={chartColors.bar} />
             </BarChart>
-          </ResponsiveContainer> */}
+          </ResponsiveContainer>
         </div>
         <div className="rounded-lg bg-white p-4 shadow dark:bg-dark-secondary">
           <h3 className="mb-4 text-lg font-semibold dark:text-white">
@@ -145,16 +148,10 @@ const statusCount = projectArray.reduce(
             Your Tasks
           </h3>
           <div style={{ height: 400, width: "100%" }}>
-            <DataGrid
-            //   rows={tasks}
-              columns={taskColumns}
-              checkboxSelection
-            //   loading={tasksLoading}
-              getRowClassName={() => "data-grid-row"}
-              getCellClassName={() => "data-grid-cell"}
-              className={dataGridClassNames}
-              sx={dataGridSxStyles(isDarkMode)}
+         
+            <DataTable columns={taskColumns} data={tasks?.data ?? []}
             />
+           
           </div>
         </div>
       </div>
