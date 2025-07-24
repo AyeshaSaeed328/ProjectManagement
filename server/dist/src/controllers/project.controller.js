@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateProject = exports.deleteProject = exports.createProject = exports.getAllProjects = void 0;
+exports.getUserProjects = exports.updateProject = exports.deleteProject = exports.createProject = exports.getAllProjects = void 0;
 const asyncHandler_1 = __importDefault(require("../utils/asyncHandler"));
 const ApiError_1 = require("../utils/ApiError");
 const ApiResponse_1 = require("../utils/ApiResponse");
@@ -39,6 +39,44 @@ const getAllProjects = (0, asyncHandler_1.default)((req, res) => __awaiter(void 
         .json(new ApiResponse_1.ApiResponse(200, projects, "All projects fetched"));
 }));
 exports.getAllProjects = getAllProjects;
+const getUserProjects = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    if (!userId) {
+        throw new ApiError_1.ApiError(401, "Unauthorized");
+    }
+    const user = yield prisma.user.findUnique({
+        where: { id: userId },
+        select: { teamId: true },
+    });
+    const teamId = user === null || user === void 0 ? void 0 : user.teamId;
+    let projects = [];
+    if (teamId) {
+        const teamProjects = yield prisma.projectTeam.findMany({
+            where: { teamId },
+            select: { projectId: true },
+        });
+        const teamProjectIds = teamProjects.map((tp) => tp.projectId);
+        projects = yield prisma.project.findMany({
+            where: {
+                OR: [
+                    { managerId: userId },
+                    { id: { in: teamProjectIds } },
+                ],
+            },
+        });
+    }
+    else {
+        projects = yield prisma.project.findMany({
+            where: { managerId: userId },
+        });
+    }
+    if (!projects) {
+        throw new ApiError_1.ApiError(404, "No projects found");
+    }
+    return res.status(200).json(new ApiResponse_1.ApiResponse(200, projects, "User projects fetched"));
+}));
+exports.getUserProjects = getUserProjects;
 // CREATE project
 const createProject = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { name, description, startDate, endDate, status, managerId } = req.body;

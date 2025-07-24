@@ -8,7 +8,7 @@ router.get("/assigned-by-me", verifyJWT, getTasksAssignedByUser);
 router.get("/assigned-to-me", verifyJWT, getTasksAssignedToUser);
 router.post("/create", verifyJWT, createTask);
 router.post("/add-user", verifyJWT, addUserToTask);
-router.patch("/update/:id", verifyJWT, updateTaskInfo);
+router.patch("/update",verifyJWT, updateTaskInfo);
 
 
 

@@ -16,11 +16,12 @@ import Link from 'next/link';
 import { usePathname } from "next/navigation";
 import { useAppDispatch, useAppSelector } from '@/app/redux'
 import { toggleSidebar } from '@/state';
+import { Project } from '@/state/api';
 
 
 
-const Sidebar = () => {
-  const [showWorkspaces, setShowWorkspaces] = useState(true);
+const Sidebar = ({ projects }: { projects: Project[] }) => {
+  const [showProjects, setShowProjects] = useState(true);
   const [showPriority, setShowPriority] = useState(true);
   const dispatch = useAppDispatch();
     const isSidebarOpen = useAppSelector((state) => 
@@ -83,16 +84,23 @@ const Sidebar = () => {
         </nav>
         </div>
 
-      {/* Workspaces Section */}
+      {/* Projects Section */}
       <SectionHeader
-        title="Workspaces"
-        isOpen={showWorkspaces}
-        onToggle={() => setShowWorkspaces(!showWorkspaces)}
+        title="Projects"
+        isOpen={showProjects}
+        onToggle={() => setShowProjects(!showProjects)}
       />
-      {showWorkspaces && (
+      {showProjects && (
         <div className="ml-4 space-y-2 mb-6 border-b-[1.5px] gap-5  border-gray-200 px-8 py-4">
-          <NavItem icon={Folder} label="Workspace 1" href="/s"/>
-          <NavItem icon={Folder} label="Workspace 2" href="/s"/>
+          {projects.map((project) => (
+            <NavItem
+              key={project.id}
+              icon={Folder}
+              label={project.name}
+              href={`/dashboard/projects/${project.id}`}
+            />
+            ))}
+          
         </div>
       )}
 
@@ -155,7 +163,7 @@ const NavItem = ({ href, icon: Icon, label }: NavItemProps) => {
         } justify-start px-8 py-3`}
       >
         {isActive && (
-          <div className="absolute left-0 top-0 h-[100%] w-[5px] bg-pink-500" />
+          <div className="absolute left-0 top-0 h-[100%] w-[5px] bg-purple-500" />
         )}
 
         <Icon className="h-6 w-6 text-gray-800 dark:text-gray-100" />

@@ -2,9 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const project_controller_1 = require("../controllers/project.controller");
+const auth_middleware_1 = require("../middlewares/auth.middleware");
 const router = (0, express_1.Router)();
-router.get("/all", project_controller_1.getAllProjects);
-router.post("/create", project_controller_1.createProject);
-router.delete("/delete/:id", project_controller_1.deleteProject);
-router.patch("/update/:id", project_controller_1.updateProject);
+router.get("/all", auth_middleware_1.verifyJWT, project_controller_1.getAllProjects);
+router.post("/create", auth_middleware_1.verifyJWT, project_controller_1.createProject);
+router.delete("/delete/:id", auth_middleware_1.verifyJWT, project_controller_1.deleteProject);
+router.patch("/update/:id", auth_middleware_1.verifyJWT, project_controller_1.updateProject);
+router.get("/user", auth_middleware_1.verifyJWT, project_controller_1.getUserProjects);
 exports.default = router;

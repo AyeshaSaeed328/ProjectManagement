@@ -81,6 +81,7 @@ export interface Task {
   points?: number;
   projectId: string;
   authorId?: string;
+  taskAssignments: TaskAssignment[];
   // assignedUserId?: string;
 
   author?: User;
@@ -115,6 +116,13 @@ type ApiResponse<T> = {
   message: string;
   data: T;
 };
+
+export interface TaskAssignment{
+  id: string
+  userId: string
+  taskId: string
+  user: User
+}
 
 
 export const api = createApi({
@@ -206,7 +214,7 @@ resetPassword: build.mutation<void, { resetToken: string; newPassword: string }>
 
 
     getProjects: build.query<ApiResponse<Project[]>, void>({
-      query: () => "projects/all",
+      query: () => "projects/user",
       providesTags: ["Projects"],
     }),
     createProject: build.mutation<Project, Partial<Project>>({
@@ -249,14 +257,14 @@ getTasksAssignedToUser: build.query<ApiResponse<Task[]>, void>({
       }),
       invalidatesTags: ["Tasks"],
     }),
-    updateTaskInfo: build.mutation<Task, { taskId: string; data: Partial<Task> }>({
-      query: ({ taskId, data }) => ({
-        url: `tasks/update/${taskId}`,
+    updateTaskInfo: build.mutation<Task, Partial<Task>>({
+      query: (data) => ({
+        url: `tasks/update`,
         method: "PATCH",
-        body: data,
+        body: { ...data },
       }),
-      invalidatesTags: (result, error, { taskId }) => [
-        { type: "Tasks", id: taskId },
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Tasks", id },
       ],
     }),
     getUsers: build.query<User[], void>({

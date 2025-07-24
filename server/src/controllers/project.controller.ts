@@ -50,6 +50,59 @@ const getAllProjects = asyncHandler(
       );
   }
 );
+const getUserProjects = asyncHandler(
+  async (req: Request, res: Response): Promise<Response<ApiResponse<Project[]>>> => {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new ApiError(401, "Unauthorized");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { teamId: true },
+    });
+
+    const teamId = user?.teamId;
+
+    let projects: Project[] = [];
+
+    if (teamId) {
+      const teamProjects = await prisma.projectTeam.findMany({
+        where: { teamId },
+        select: { projectId: true },
+      });
+
+      const teamProjectIds = teamProjects.map((tp) => tp.projectId);
+
+      projects = await prisma.project.findMany({
+        where: {
+          OR: [
+            { managerId: userId },
+            { id: { in: teamProjectIds } },
+          ],
+        },
+      });
+    } else {
+      projects = await prisma.project.findMany({
+        where: { managerId: userId },
+      });
+    }
+
+    if (!projects) {
+      throw new ApiError(404, "No projects found");
+    }
+
+    return res.status(200).json(
+      new ApiResponse<Project[]>(
+        200,
+        projects,
+        "User projects fetched"
+      )
+    );
+  }
+);
+
+
 // CREATE project
 const createProject = asyncHandler(
   async (req: Request, res: Response): Promise<Response<ApiResponse<Project>>> => {
@@ -135,4 +188,5 @@ export {
   createProject,
   deleteProject,
   updateProject,
+  getUserProjects
 };

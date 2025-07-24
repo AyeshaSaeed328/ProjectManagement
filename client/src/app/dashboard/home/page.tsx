@@ -34,14 +34,16 @@ import { taskColumns } from "@/components/data-table";
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
 const HomePage = () => {
-  const isAuthenticated = useAppSelector((state)=>state.global.auth.isAuthenticated)
-  const {
-    data: tasks,
-    isLoading: tasksLoading,
-    isError: tasksError,
-  } = useGetTasksAssignedByUserQuery(undefined, {
-  skip: !isAuthenticated,
+  const { isLoading, isAuthenticated } = useAppSelector((state) => state.global.auth);
+
+const {
+  data: tasks,
+  isLoading: tasksLoading,
+  isError: tasksError,
+} = useGetTasksAssignedByUserQuery(undefined, {
+  skip: isLoading || !isAuthenticated,
 });
+
   const { data: projects, isLoading: isProjectsLoading } =
     useGetProjectsQuery();
 
@@ -98,7 +100,7 @@ const statusCount = projectArray.reduce(
       };
 
   return (
-    <div className="container h-full w-[100%] bg-gray-100 bg-transparent p-8">
+    <div className="container h-full w-[100%] bg-transparent p-8">
       <Header name="Project Management Dashboard" />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="rounded-lg bg-white p-4 shadow dark:bg-dark-secondary">

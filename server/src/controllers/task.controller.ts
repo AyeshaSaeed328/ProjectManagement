@@ -19,8 +19,24 @@ const getTasksAssignedByUser = asyncHandler(
       where: { authorId: userId },
       include: {
         project: true,
-        author: true,
-        taskAssignments: true,
+        author: {
+      select: {
+        id: true,
+        username: true,
+        profilePicture: true,
+      },
+    },
+    taskAssignments: {
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            profilePicture: true,
+          },
+        },
+      },
+    },
         comments: true,
         attachments: true,
       },
@@ -58,7 +74,24 @@ const getTasksAssignedToUser = asyncHandler(
       },
       include: {
         project: true,
-        author: true,
+        author: {
+      select: {
+        id: true,
+        username: true,
+        profilePicture: true,
+      },
+    },
+    taskAssignments: {
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            profilePicture: true,
+          },
+        },
+      },
+    },
         comments: true,
         attachments: true,
       }
@@ -162,8 +195,8 @@ const addUserToTask = asyncHandler(
 
 const updateTaskInfo = asyncHandler(
   async (req: Request, res: Response): Promise<Response<ApiResponse<Task>>> => {
-    const { id } = req.params;
     const {
+      id,
       title,
       description,
       priority,
@@ -174,30 +207,31 @@ const updateTaskInfo = asyncHandler(
       points,
       projectId,
       authorId,
-      assignedUserIds = [],
+      assignedUserIds,
     } = req.body;
 
-    if (!id) {
-      throw new ApiError(400, "Task ID is required");
+    const updateData: any = {};
+
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (priority !== undefined) updateData.priority = priority;
+    if (status !== undefined) updateData.status = status;
+    if (tags !== undefined) updateData.tags = tags;
+    if (startDate !== undefined) updateData.startDate = new Date(startDate);
+    if (endDate !== undefined) updateData.endDate = new Date(endDate);
+    if (points !== undefined) updateData.points = points;
+    if (projectId !== undefined) updateData.projectId = projectId;
+    if (authorId !== undefined) updateData.authorId = authorId;
+
+    if (Array.isArray(assignedUserIds)) {
+      updateData.taskAssignments = {
+        create: assignedUserIds.map((userId: string) => ({ userId })),
+      };
     }
 
     const task = await prisma.task.update({
       where: { id },
-      data: {
-        title,
-        description,
-        priority,
-        status,
-        tags,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        points,
-        projectId,
-        authorId,
-        taskAssignments: {
-          create: assignedUserIds.map((userId: string) => ({ userId })),
-        },
-      },
+      data: updateData,
       include: {
         taskAssignments: {
           include: {

@@ -7,6 +7,7 @@ import { EllipsisVertical, MessageSquareMore, Plus } from "lucide-react";
 import { format } from "date-fns";
 import Image from "next/image";
 import { Status } from "@/state/api";
+import { Flag } from "lucide-react";
 
 type BoardProps = {
   id: string;
@@ -33,8 +34,9 @@ const BoardView = ({ id, setIsModalNewTaskOpen }: BoardProps) => {
   const [updateTaskInfo] = useUpdateTaskInfoMutation();
 
   const moveTask = (taskId: string, toStatus: Status) => {
-    updateTaskInfo({ taskId, data:{status: toStatus} });
-  };
+  updateTaskInfo({ id: taskId, status: toStatus });
+};
+
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>An error occurred while fetching tasks</div>;
@@ -80,10 +82,9 @@ const TaskColumn = ({
   const tasksCount = tasks.filter((task) => task.status === status).length;
 
   const statusColor: any = {
-    "To Do": "#2563EB",
-    "Work In Progress": "#059669",
-    "Under Review": "#D97706",
-    Completed: "#000000",
+    IN_PROGRESS: "#2563EB",
+    DONE: "#059669",
+    TODO: "#D97706",
   };
 
   return (
@@ -91,12 +92,12 @@ const TaskColumn = ({
       ref={(instance) => {
         drop(instance);
       }}
-      className={`sl:py-4 rounded-lg py-2 xl:px-2 ${isOver ? "bg-blue-100 dark:bg-neutral-950" : ""}`}
+      className={`sl:py-4 rounded-lg py-2 xl:px-2 ${isOver ? "bg-purple-100/50 dark:bg-purple-600/10" : ""}`}
     >
       <div className="mb-3 flex w-full">
         <div
-          className={`w-2 !bg-[${statusColor[status]}] rounded-s-lg`}
-          style={{ backgroundColor: statusColor[status] }}
+          className={`w-2  rounded-s-lg`}
+          // style={{ backgroundColor: statusColor[status] }}
         />
         <div className="flex w-full items-center justify-between rounded-e-lg bg-white px-5 py-4 dark:bg-dark-secondary">
           <h3 className="flex items-center text-lg font-semibold dark:text-white">
@@ -159,17 +160,19 @@ const Task = ({ task }: TaskProps) => {
     <div
       className={`rounded-full px-2 py-1 text-xs font-semibold ${
         priority === "CRITICAL"
-          ? "bg-red-200 text-red-700"
+          ? " text-red-700"
           : priority === "HIGH"
-            ? "bg-yellow-200 text-yellow-700"
+            ? " text-yellow-700"
             : priority === "MEDIUM"
-              ? "bg-green-200 text-green-700"
+              ? " text-green-700"
               : priority === "LOW"
-                ? "bg-blue-200 text-blue-700"
-                : "bg-gray-200 text-gray-700"
+                ? " text-blue-700"
+                : " text-gray-700"
       }`}
     >
-      {priority}
+      <div title={priority}>
+  <Flag fill="true" size={20} className="cursor-pointer" />
+</div>
     </div>
   );
 
@@ -192,38 +195,45 @@ const Task = ({ task }: TaskProps) => {
         // />
       )} */}
       <div className="p-4 md:p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex flex-1 flex-wrap items-center gap-2">
-            {task.priority && <PriorityTag priority={task.priority} />}
-            <div className="flex gap-2">
+        <div className="flex items-end justify-between">
+          <div className="flex flex-1 flex-wrap items-center">
+            
+            {/* <div className="flex gap-2">
               {taskTagsSplit.map((tag) => (
                 <div
                   key={tag}
-                  className="rounded-full bg-blue-100 px-2 py-1 text-xs"
+                  className="rounded-full bg-purple-200 px-2 py-1 text-xs"
                 >
                   {" "}
                   {tag}
                 </div>
               ))}
-            </div>
+            </div> */}
           </div>
-          <button className="flex h-6 w-4 flex-shrink-0 items-center justify-center dark:text-neutral-500">
+
+          {/* <button className="flex h-6 w-4 flex-shrink-0 items-center justify-center dark:text-neutral-500">
             <EllipsisVertical size={26} />
-          </button>
+          </button> */}
         </div>
+             
+        <div className="mb-3 flex justify-between">
+           <div className="mb-3 w-full">
+          <div className="flex items-center justify-between">
+    <h4 className="text-lg font-bold dark:text-white">{task.title}</h4>
+    {/* {typeof task.points === "number" && (
+      <div className="text-xs font-semibold dark:text-white">
+        {task.points} pts
+      </div>
+    )} */}
+        {task.priority && <PriorityTag priority={task.priority}/>}
 
-        <div className="my-3 flex justify-between">
-          <h4 className="text-md font-bold dark:text-white">{task.title}</h4>
-          {typeof task.points === "number" && (
-            <div className="text-xs font-semibold dark:text-white">
-              {task.points} pts
-            </div>
-          )}
-        </div>
+  </div>
 
-        <div className="text-xs text-gray-500 dark:text-neutral-500">
-          {formattedStartDate && <span>{formattedStartDate} - </span>}
-          {formattedDueDate && <span>{formattedDueDate}</span>}
+        <div className="text-xs text-gray-500 dark:text-neutral-500 mt-1">
+    {formattedStartDate && <span>{formattedStartDate} - </span>}
+    {formattedDueDate && <span>{formattedDueDate}</span>}
+  </div></div>
+  
         </div>
         <p className="text-sm text-gray-600 dark:text-neutral-500">
           {task.description}
@@ -233,26 +243,29 @@ const Task = ({ task }: TaskProps) => {
         {/* Users */}
         <div className="mt-3 flex items-center justify-between">
           <div className="flex -space-x-[6px] overflow-hidden">
-            {/* {task.assignee && (
-              <Image
-                key={task.assignee.userId}
-                src={`https://pm-s3-images.s3.us-east-2.amazonaws.com/${task.assignee.profilePictureUrl!}`}
-                alt={task.assignee.username}
-                width={30}
-                height={30}
-                className="h-8 w-8 rounded-full border-2 border-white object-cover dark:border-dark-secondary"
-              />
-            )} */}
-            {/* {task.author && (
+            {task.taskAssignments?.map((assignment) =>
+              assignment.userId ? (
+                <Image
+                  key={assignment.user.id}
+                  src={assignment.user.profilePicture!}
+                  alt={assignment.user.username}
+                  width={30}
+                  height={30}
+                  className="h-8 w-8 rounded-full border-2 border-white object-cover dark:border-dark-secondary"
+                />
+              ) : null
+            )}
+
+            {task.author && (
               <Image
                 key={task.author.id}
-                src="placeholder.png"
+                src={task.author.profilePicture!}
                 alt={task.author.username}
                 width={30}
                 height={30}
                 className="h-8 w-8 rounded-full border-2 border-white object-cover dark:border-dark-secondary"
               />
-            )} */}
+            )}
           </div>
           <div className="flex items-center text-gray-500 dark:text-neutral-500">
             <MessageSquareMore size={20} />
