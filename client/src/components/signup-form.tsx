@@ -17,6 +17,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {signUpSchema, SignUpSchema } from "@/schemas/signUpSchema"
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useAppDispatch } from "@/app/redux";
+import { setAuthLoading, setAuthUser, clearAuth } from "@/state";
+
 
 
 export default function SignForm() {
@@ -28,19 +31,29 @@ export default function SignForm() {
     resolver: zodResolver(signUpSchema),
   });
   const [registerUser] = useRegisterUserMutation();
+  const dispatch = useAppDispatch();
 
   const [formError, setFormError] = useState<string | null>(null);
   const router = useRouter()
 
   const onSubmit = async (data: SignUpSchema) => {
   setFormError(null);
+  dispatch(setAuthLoading(true))
   try {
     const res = await registerUser(data).unwrap(); // unwrap gives you direct access to the result or throws error
+    
+    
     console.log("User registered:", res);
-    router.push("/verify-email"); // or wherever you redirect post-registration
+    
+    const user = res.data.user
+
+    dispatch(setAuthUser(user))
+    router.push("/verify-email");
   } catch (err: any) {
+
     const errorMessage =
       err?.data?.message || err?.error || "Something went wrong. Please try again.";
+      dispatch(clearAuth())
     setFormError(errorMessage);
   }
 };

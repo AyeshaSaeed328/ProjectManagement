@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateTaskInfo = exports.addUserToTask = exports.createTask = exports.getTasksAssignedToUser = exports.getTasksAssignedByUser = void 0;
+exports.getTasksByProjectId = exports.updateTaskInfo = exports.addUserToTask = exports.createTask = exports.getTasksAssignedToUser = exports.getTasksAssignedByUser = void 0;
 const asyncHandler_1 = __importDefault(require("../utils/asyncHandler"));
 const ApiError_1 = require("../utils/ApiError");
 const ApiResponse_1 = require("../utils/ApiResponse");
@@ -99,6 +99,40 @@ const getTasksAssignedToUser = (0, asyncHandler_1.default)((req, res) => __await
     return res.status(200).json(new ApiResponse_1.ApiResponse(200, tasks, "User tasks fetched successfully"));
 }));
 exports.getTasksAssignedToUser = getTasksAssignedToUser;
+const getTasksByProjectId = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const projectId = req.params.projectId;
+    if (!projectId) {
+        throw new ApiError_1.ApiError(400, "Project ID is required");
+    }
+    const tasks = yield prisma.task.findMany({
+        where: { projectId },
+        include: {
+            project: true,
+            author: {
+                select: {
+                    id: true,
+                    username: true,
+                    profilePicture: true,
+                },
+            },
+            taskAssignments: {
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            username: true,
+                            profilePicture: true,
+                        },
+                    },
+                },
+            },
+            comments: true,
+            attachments: true,
+        },
+    });
+    return res.status(200).json(new ApiResponse_1.ApiResponse(200, tasks, "Tasks fetched successfully"));
+}));
+exports.getTasksByProjectId = getTasksByProjectId;
 const createTask = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { title, description, priority, status, tags, startDate, endDate, points, projectId, authorId, assignedUserIds = [], } = req.body;
     if (!title || !projectId || !authorId) {

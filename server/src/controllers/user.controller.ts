@@ -98,6 +98,8 @@ const createUser = asyncHandler(
       }
     }
 
+    
+
     const userData: Prisma.UserCreateInput = {
       email,
       username,
@@ -113,29 +115,39 @@ const createUser = asyncHandler(
         connect: { id: teamId },
       };
     }
-
+    let accessToken
+    let refreshToken
     const newUser = await prisma.user.create({ data: userData });
 
-    // const { unHashedToken, hashedToken, tokenExpiry } =
-    //   generateTemporaryToken();
-    // await prisma.user.update({
-    //   where: { id: newUser.id },
-    //   data: {
-    //     emailVerificationToken: hashedToken,
-    //     emailVerificationExpiry: tokenExpiry,
-    //   },
-    // });
-    // await sendEmail({
-    //   email: newUser?.email,
-    //   subject: "Please verify your email",
-    //   mailgenContent: emailVerificationMailgenContent(
-    //     newUser.username,
-    //     `${req.protocol}://${req.get(
-    //       "host"
-    //     )}/api/v1/users/verify-email/${unHashedToken}`
-    //   ),
-    // });
-    // console.log("Email sent")
+    try {
+      accessToken = await generateAccessToken(newUser)
+      refreshToken = await generateRefreshToken(newUser)
+      
+    } catch (error) {
+      throw new ApiError(500, "Could not generate session tokens need to login again")
+    }
+
+    const { unHashedToken, hashedToken, tokenExpiry } =
+      generateTemporaryToken();
+    await prisma.user.update({
+      where: { id: newUser.id },
+      data: {
+        emailVerificationToken: hashedToken,
+        emailVerificationExpiry: tokenExpiry,
+        refreshToken
+      },
+    });
+    await sendEmail({
+      email: newUser?.email,
+      subject: "Please verify your email",
+      mailgenContent: emailVerificationMailgenContent(
+        newUser.username,
+        `${req.protocol}://${req.get(
+          "host"
+        )}/api/v1/users/verify-email/${unHashedToken}`
+      ),
+    });
+    console.log("Email sent")
 
     const createdUser = await prisma.user.findUnique({
       where: { id: newUser.id },
@@ -149,6 +161,8 @@ const createUser = asyncHandler(
 
     return res
       .status(201)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", refreshToken, options)
       .json(new ApiResponse(201, createdUser, "User created successfully"));
   }
 );
@@ -317,7 +331,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
 //     .status(200)
 //     .json(new ApiResponse(200, { isEmailVerified: true }, "Email is verified"));
 // });
-return res.redirect(`${process.env.CLIENT_URL}/email-verified`);})
+return res.redirect(`${process.env.CLIENT_URL}/dashboard`);})
 
 const resendEmailVerification = asyncHandler(async (req, res) => {
   const user = await prisma.user.findUnique({ where: { id: req.user?.id } });

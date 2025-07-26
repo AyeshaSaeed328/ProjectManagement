@@ -4,6 +4,9 @@ import {Search, Settings, Sun, Moon, Menu} from "lucide-react"
 import Link  from 'next/link'
 import { useAppDispatch, useAppSelector } from '@/app/redux'
 import { toggleDarkMode, toggleSidebar } from '@/state'
+import { useLogoutUserMutation } from '@/state/api'
+import { useRouter } from "next/navigation";
+import { clearAuth } from '@/state'
 
 
 
@@ -14,6 +17,18 @@ const Navbar = () => {
   )
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode,
   )
+   const [logoutUser, { isLoading }] = useLogoutUserMutation();
+  const router = useRouter();
+
+   const handleLogout = async () => {
+    try {
+      await logoutUser().unwrap(); // send POST to /users/logout
+      dispatch(clearAuth());       // clear Redux auth state
+      router.push("/login");       // redirect to login
+    } catch (error) {
+      console.error("Logout failed", error);
+    }
+  };
 
   return (
     <div className='flex items-center justify-between bg-white px-4 py-3 dark:bg-dark-bg'>
@@ -59,6 +74,9 @@ const Navbar = () => {
           }
         > <Settings className="h-6 w-6 cursor-pointer dark:text-white" />
         </Link>
+        <button onClick={handleLogout} className='ml-4 rounded bg-red-500 px-4 py-2 text-white hover:bg-red-600 disabled:opacity-50' disabled={isLoading}>
+          Logout
+        </button>
      
 
 

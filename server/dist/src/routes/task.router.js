@@ -9,4 +9,5 @@ router.get("/assigned-to-me", auth_middleware_1.verifyJWT, task_controller_1.get
 router.post("/create", auth_middleware_1.verifyJWT, task_controller_1.createTask);
 router.post("/add-user", auth_middleware_1.verifyJWT, task_controller_1.addUserToTask);
 router.patch("/update", auth_middleware_1.verifyJWT, task_controller_1.updateTaskInfo);
+router.get("/:projectId", auth_middleware_1.verifyJWT, task_controller_1.getTasksByProjectId);
 exports.default = router;

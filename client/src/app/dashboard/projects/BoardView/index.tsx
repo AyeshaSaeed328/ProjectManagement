@@ -1,4 +1,4 @@
-import { useGetTasksAssignedByUserQuery, useGetTasksAssignedToUserQuery, useUpdateTaskInfoMutation } from "@/state/api";
+import { useGetTasksAssignedByUserQuery, useGetTasksAssignedToUserQuery, useUpdateTaskInfoMutation, useGetAllTasksFromProjectQuery } from "@/state/api";
 import React from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -8,10 +8,13 @@ import { format } from "date-fns";
 import Image from "next/image";
 import { Status } from "@/state/api";
 import { Flag } from "lucide-react";
+import { Switch } from "@/components/ui/switch"
+import { useState } from "react";
 
 type BoardProps = {
   id: string;
   setIsModalNewTaskOpen: (isOpen: boolean) => void;
+  tasks: TaskType[]
 };
 
 const statusLabels: Record<Status, string> = {
@@ -24,37 +27,41 @@ const taskStatus: Status[] = Object.keys(statusLabels) as Status[];
 
 // const taskStatus = ["To Do", "Work In Progress", "Under Review", "Completed"];
 
-const BoardView = ({ id, setIsModalNewTaskOpen }: BoardProps) => {
-  const {
-    data: res,
-    isLoading,
-    error,
-  } = useGetTasksAssignedByUserQuery();
-  const tasks = res?.data || []
+const BoardView = ({ id, setIsModalNewTaskOpen, tasks }: BoardProps) => {
+  console.log("tasks", tasks)
+  
+  
   const [updateTaskInfo] = useUpdateTaskInfoMutation();
 
   const moveTask = (taskId: string, toStatus: Status) => {
-  updateTaskInfo({ id: taskId, status: toStatus });
-};
+    updateTaskInfo({ id: taskId, status: toStatus });
+  };
 
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>An error occurred while fetching tasks</div>;
 
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 xl:grid-cols-4">
-        {taskStatus.map((status: Status) => (
-          <TaskColumn
-            key={status}
-            status={status}
-            tasks={tasks || []}
-            moveTask={moveTask}
-            setIsModalNewTaskOpen={setIsModalNewTaskOpen}
-          />
-        ))}
-      </div>
-    </DndProvider>
+    <div className="flex flex-col p-4 gap-4">
+  <div className="flex justify-end">
+    
+  </div>
+
+  {/* Task board */}
+  <DndProvider backend={HTML5Backend}>
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {taskStatus.map((status: Status) => (
+        <TaskColumn
+          key={status}
+          status={status}
+          tasks={tasks || []}
+          moveTask={moveTask}
+          setIsModalNewTaskOpen={setIsModalNewTaskOpen}
+        />
+      ))}
+    </div>
+  </DndProvider>
+</div>
+
+
   );
 };
 
@@ -81,11 +88,7 @@ const TaskColumn = ({
 
   const tasksCount = tasks.filter((task) => task.status === status).length;
 
-  const statusColor: any = {
-    IN_PROGRESS: "#2563EB",
-    DONE: "#059669",
-    TODO: "#D97706",
-  };
+  
 
   return (
     <div
@@ -97,7 +100,7 @@ const TaskColumn = ({
       <div className="mb-3 flex w-full">
         <div
           className={`w-2  rounded-s-lg`}
-          // style={{ backgroundColor: statusColor[status] }}
+        // style={{ backgroundColor: statusColor[status] }}
         />
         <div className="flex w-full items-center justify-between rounded-e-lg bg-white px-5 py-4 dark:bg-dark-secondary">
           <h3 className="flex items-center text-lg font-semibold dark:text-white">
@@ -150,16 +153,15 @@ const Task = ({ task }: TaskProps) => {
   const formattedStartDate = task.startDate
     ? format(new Date(task.startDate), "P")
     : "";
-  const formattedDueDate = task.dueDate
-    ? format(new Date(task.dueDate), "P")
+  const formattedDueDate = task.endDate
+    ? format(new Date(task.endDate), "P")
     : "";
 
   const numberOfComments = (task.comments && task.comments.length) || 0;
 
   const PriorityTag = ({ priority }: { priority: TaskType["priority"] }) => (
     <div
-      className={`rounded-full px-2 py-1 text-xs font-semibold ${
-        priority === "CRITICAL"
+      className={`rounded-full px-2 py-1 text-xs font-semibold ${priority === "CRITICAL"
           ? " text-red-700"
           : priority === "HIGH"
             ? " text-yellow-700"
@@ -168,11 +170,11 @@ const Task = ({ task }: TaskProps) => {
               : priority === "LOW"
                 ? " text-blue-700"
                 : " text-gray-700"
-      }`}
+        }`}
     >
       <div title={priority}>
-  <Flag fill="true" size={20} className="cursor-pointer" />
-</div>
+        <Flag size={20} className="cursor-pointer" />
+      </div>
     </div>
   );
 
@@ -181,9 +183,8 @@ const Task = ({ task }: TaskProps) => {
       ref={(instance) => {
         drag(instance);
       }}
-      className={`mb-4 rounded-md bg-white shadow dark:bg-dark-secondary ${
-        isDragging ? "opacity-50" : "opacity-100"
-      }`}
+      className={`mb-4 rounded-md bg-white shadow dark:bg-dark-secondary ${isDragging ? "opacity-50" : "opacity-100"
+        }`}
     >
       {/* {task.attachments && task.attachments.length > 0 && (
         // <Image
@@ -197,7 +198,7 @@ const Task = ({ task }: TaskProps) => {
       <div className="p-4 md:p-6">
         <div className="flex items-end justify-between">
           <div className="flex flex-1 flex-wrap items-center">
-            
+
             {/* <div className="flex gap-2">
               {taskTagsSplit.map((tag) => (
                 <div
@@ -215,25 +216,25 @@ const Task = ({ task }: TaskProps) => {
             <EllipsisVertical size={26} />
           </button> */}
         </div>
-             
+
         <div className="mb-3 flex justify-between">
-           <div className="mb-3 w-full">
-          <div className="flex items-center justify-between">
-    <h4 className="text-lg font-bold dark:text-white">{task.title}</h4>
-    {/* {typeof task.points === "number" && (
+          <div className="mb-3 w-full">
+            <div className="flex items-center justify-between">
+              <h4 className="text-lg font-bold dark:text-white">{task.title}</h4>
+              {/* {typeof task.points === "number" && (
       <div className="text-xs font-semibold dark:text-white">
         {task.points} pts
       </div>
     )} */}
-        {task.priority && <PriorityTag priority={task.priority}/>}
+              {task.priority && <PriorityTag priority={task.priority} />}
 
-  </div>
+            </div>
 
-        <div className="text-xs text-gray-500 dark:text-neutral-500 mt-1">
-    {formattedStartDate && <span>{formattedStartDate} - </span>}
-    {formattedDueDate && <span>{formattedDueDate}</span>}
-  </div></div>
-  
+            <div className="text-xs text-gray-500 dark:text-neutral-500 mt-1">
+              {formattedStartDate && <span>{formattedStartDate} - </span>}
+              {formattedDueDate && <span>{formattedDueDate}</span>}
+            </div></div>
+
         </div>
         <p className="text-sm text-gray-600 dark:text-neutral-500">
           {task.description}

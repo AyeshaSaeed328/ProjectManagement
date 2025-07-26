@@ -89,27 +89,31 @@ const createUser = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, v
             connect: { id: teamId },
         };
     }
+    let accessToken;
+    let refreshToken;
     const newUser = yield prisma.user.create({ data: userData });
-    // const { unHashedToken, hashedToken, tokenExpiry } =
-    //   generateTemporaryToken();
-    // await prisma.user.update({
-    //   where: { id: newUser.id },
-    //   data: {
-    //     emailVerificationToken: hashedToken,
-    //     emailVerificationExpiry: tokenExpiry,
-    //   },
-    // });
-    // await sendEmail({
-    //   email: newUser?.email,
-    //   subject: "Please verify your email",
-    //   mailgenContent: emailVerificationMailgenContent(
-    //     newUser.username,
-    //     `${req.protocol}://${req.get(
-    //       "host"
-    //     )}/api/v1/users/verify-email/${unHashedToken}`
-    //   ),
-    // });
-    // console.log("Email sent")
+    try {
+        accessToken = yield (0, token_1.generateAccessToken)(newUser);
+        refreshToken = yield (0, token_1.generateRefreshToken)(newUser);
+    }
+    catch (error) {
+        throw new ApiError_1.ApiError(500, "Could not generate session tokens need to login again");
+    }
+    const { unHashedToken, hashedToken, tokenExpiry } = (0, token_1.generateTemporaryToken)();
+    yield prisma.user.update({
+        where: { id: newUser.id },
+        data: {
+            emailVerificationToken: hashedToken,
+            emailVerificationExpiry: tokenExpiry,
+            refreshToken
+        },
+    });
+    yield (0, mail_1.sendEmail)({
+        email: newUser === null || newUser === void 0 ? void 0 : newUser.email,
+        subject: "Please verify your email",
+        mailgenContent: (0, mail_1.emailVerificationMailgenContent)(newUser.username, `${req.protocol}://${req.get("host")}/api/v1/users/verify-email/${unHashedToken}`),
+    });
+    console.log("Email sent");
     const createdUser = yield prisma.user.findUnique({
         where: { id: newUser.id },
         select: {
@@ -121,6 +125,8 @@ const createUser = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, v
     });
     return res
         .status(201)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
         .json(new ApiResponse_1.ApiResponse(201, createdUser, "User created successfully"));
 }));
 exports.createUser = createUser;
@@ -254,7 +260,7 @@ const verifyEmail = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, 
     //     .status(200)
     //     .json(new ApiResponse(200, { isEmailVerified: true }, "Email is verified"));
     // });
-    return res.redirect(`${process.env.CLIENT_URL}/email-verified`);
+    return res.redirect(`${process.env.CLIENT_URL}/dashboard`);
 }));
 exports.verifyEmail = verifyEmail;
 const resendEmailVerification = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {

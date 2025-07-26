@@ -27,6 +27,8 @@ const Sidebar = ({ projects }: { projects: Project[] }) => {
     const isSidebarOpen = useAppSelector((state) => 
       state.global.isSidebarOpen,
     )
+    const user = useAppSelector((state) => state.global.auth.user)
+    
 
   return (
     <aside className="fixed h-screen w-85 bg-white dark:bg-dark-bg p-4 border-r border-gray-200 dark:border-stroke-dark flex flex-col text-sm shadow-xl transition-all duration-300 z-40 overflow-y-auto dark:text-white ">
@@ -51,17 +53,17 @@ const Sidebar = ({ projects }: { projects: Project[] }) => {
         {/* TEAM */}
         <div className="flex items-center gap-5 border-y-[1.5px] border-gray-200 px-8 py-8 dark:border-gray-700">
           <Image
-  src="/placeholder.png"
+  src={user?.profilePicture!}
   alt="Logo"
   width={40}
   height={40}
-  placeholder="blur"
-  blurDataURL="/placeholder.png" // local tiny image
+  // placeholder="blur"
+  // blurDataURL="/placeholder.png" // local tiny image
 />
 
           <div>
-            <h3 className="text-md font-bold tracking-wide dark:text-gray-200">
-              Michael Scott
+            <h3 className="text-lg font-bold tracking-wide dark:text-gray-200">
+              {user?.username}
             </h3>
             <div className="mt-1 flex items-start gap-2">
               <LockIcon className="mt-[0.1rem] h-3 w-3 text-gray-500 dark:text-gray-400" />

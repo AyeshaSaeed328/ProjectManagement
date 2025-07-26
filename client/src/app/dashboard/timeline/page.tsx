@@ -12,7 +12,6 @@ type TaskTypeItems = "task" | "milestone" | "project";
 
 
 const Timeline = () => {
-  const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
   const { data: res, isLoading, isError } = useGetProjectsQuery();
 const projects = res?.data ||[]
 
@@ -86,7 +85,7 @@ const projects = res?.data ||[]
             {...displayOptions}
             columnWidth={displayOptions.viewMode === ViewMode.Month ? 150 : 100}
             listCellWidth=""
-projectBackgroundColor={isDarkMode ? "#101214" : "#1f2937"}
+projectBackgroundColor="#3b0764"
             projectProgressColor="#ec4899"
             projectProgressSelectedColor="#ec4899"
 

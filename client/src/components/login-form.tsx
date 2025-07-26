@@ -37,7 +37,7 @@ export function LoginForm() {
   try {
 
     const res = await loginUser(data).unwrap();
-    const user = res.user
+    const user = res.data.user
     dispatch(setAuthUser(user))
 
     // const user = response.data?.user;

@@ -77,7 +77,7 @@ export interface Task {
   priority?: Priority;
   tags?: string;
   startDate?: string;
-  dueDate?: string;
+  endDate?: string;
   points?: number;
   projectId: string;
   authorId?: string;
@@ -131,7 +131,8 @@ export const api = createApi({
   tagTypes: ["Projects", "Tasks", "Users", "Teams", "Auth"],
   endpoints: (build) => ({
 
-    registerUser: build.mutation<User, Partial<User>>({
+    registerUser: build.mutation<ApiResponse<{ user: User }>,
+    Partial<User>>({
       query: (userData) => ({
         url: "users/register",
         method: "POST",
@@ -141,7 +142,7 @@ export const api = createApi({
     }),
 
     loginUser: build.mutation<
-      { user: User },
+      ApiResponse<{ user: User }>,
       { email?: string; username?: string; password: string }
     >({
       query: (credentials) => ({
@@ -160,7 +161,7 @@ export const api = createApi({
       invalidatesTags: ["Auth"],
     }),
 
-    getAuthUser: build.query<User, void>({
+    getAuthUser: build.query<ApiResponse<User>, void>({
       query: () => "users/current-user",
       providesTags: ["Auth"],
     }),
@@ -247,6 +248,14 @@ getTasksAssignedToUser: build.query<ApiResponse<Task[]>, void>({
       ? result.data.map(({ id }) => ({ type: "Tasks" as const, id }))
       : [{ type: "Tasks" as const }],
 }),
+getAllTasksFromProject: build.query<ApiResponse<Task[]>, string>({
+  query: (projectId) => `tasks/${projectId}`,
+  providesTags: (result) =>
+    result?.data
+      ? result.data.map((task) => ({ type: "Tasks" as const, id: task.id }))
+      : [{ type: "Tasks" }],
+}),
+
 
 
     createTask: build.mutation<Task, Partial<Task>>({
@@ -297,6 +306,7 @@ export const {
   useCreateProjectMutation,
   useGetTasksAssignedByUserQuery,
   useGetTasksAssignedToUserQuery,
+  useGetAllTasksFromProjectQuery,
   useCreateTaskMutation,
   useUpdateTaskInfoMutation,
   useSearchQuery,
