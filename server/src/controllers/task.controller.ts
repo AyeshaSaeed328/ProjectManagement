@@ -141,6 +141,11 @@ const getTasksByProjectId = asyncHandler(
 
 const createTask = asyncHandler(
   async (req: Request, res: Response): Promise<Response<ApiResponse<Task>>> => {
+    const authorId = req.user?.id;
+    
+    if (!authorId) {
+      throw new ApiError(400, "Author ID is required");
+    }
     const {
       title,
       description,
@@ -151,10 +156,9 @@ const createTask = asyncHandler(
       endDate,
       points,
       projectId,
-      authorId,
       assignedUserIds = [],
     } = req.body;
-    if (!title || !projectId || !authorId) {
+    if (!title || !projectId || !priority || !status) {
       throw new ApiError(400, "Missing required fields");
     }
     const task = await prisma.task.create({
@@ -190,46 +194,47 @@ const createTask = asyncHandler(
   }
 );
 
-const addUserToTask = asyncHandler(
-  async (req: Request, res: Response): Promise<Response<ApiResponse<TaskAssignment>>> => {
-    const { taskId, userId } = req.body;
+const addUsersToTask = asyncHandler(
+  async (req: Request, res: Response): Promise<Response<ApiResponse<TaskAssignment[]>>> => {
+    const { taskId, userIds } = req.body;
 
-    // ✅ Validation
-    if (!taskId || !userId) {
-      throw new ApiError(400, "Missing required fields: taskId and userId are required");
+    // ✅ Validate
+    if (!taskId || !Array.isArray(userIds) || userIds.length === 0) {
+      throw new ApiError(400, "Missing required fields: taskId and at least one userId");
     }
 
-    // ✅ Check if assignment already exists
-    const existingAssignment = await prisma.taskAssignment.findUnique({
+    // ✅ Get existing assignments to avoid duplicates
+    const existingAssignments = await prisma.taskAssignment.findMany({
       where: {
-        userId_taskId: {
-          taskId,
-          userId,
-        },
+        taskId,
+        userId: { in: userIds },
       },
     });
 
-    if (existingAssignment) {
-      throw new ApiError(409, "User is already assigned to this task");
-    }
+    const existingUserIds = new Set(existingAssignments.map((a) => a.userId));
 
-    // ✅ Create the assignment
-    const taskAssignment = await prisma.taskAssignment.create({
-      data: {
+    // ✅ Filter out already assigned users
+    const newUserIds = userIds.filter((id) => !existingUserIds.has(id));
+
+    // ✅ Create new assignments in bulk
+    const newAssignments = await prisma.taskAssignment.createMany({
+      data: newUserIds.map((userId) => ({
         taskId,
         userId,
-      },
+      })),
+      skipDuplicates: true, // just in case
     });
 
     return res.status(201).json(
-      new ApiResponse<TaskAssignment>(
+      new ApiResponse(
         201,
-        taskAssignment,
-        "User added to task successfully"
+        newAssignments,
+        `Assigned ${newUserIds.length} user(s) to task successfully`
       )
     );
   }
 );
+
 
 const updateTaskInfo = asyncHandler(
   async (req: Request, res: Response): Promise<Response<ApiResponse<Task>>> => {
@@ -292,7 +297,7 @@ export {
   getTasksAssignedByUser,
   getTasksAssignedToUser,
   createTask,
-  addUserToTask,
+  addUsersToTask,
   updateTaskInfo,
   getTasksByProjectId
 };

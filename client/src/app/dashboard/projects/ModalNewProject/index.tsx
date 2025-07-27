@@ -30,6 +30,7 @@ const ModalNewProject = ({ isOpen, onClose }: Props) => {
       description,
       startDate: formattedStartDate,
       endDate: formattedEndDate,
+      managerId: "cmdj2642d0000vc30u9ikaait", // Assuming you will set this later
     });
   };
 

@@ -5,11 +5,12 @@ import ProjectHeader from "../ProjectHeader";
 import Board from "../BoardView";
 import List from "../ListView";
 import Timeline from "../TimelineView";
-// import Table from "../TableView";
+import Table from "../TableView";
 import ModalNewTask from "@/(components)/ModalNewTask";
 import { useGetTasksAssignedByUserQuery, useGetTasksAssignedToUserQuery, useUpdateTaskInfoMutation, useGetAllTasksFromProjectQuery } from "@/state/api";
 import { use } from 'react';
 import { Switch } from "@/components/ui/switch";
+import { Plus } from "lucide-react";
 
 type Props = {
   params: { id: string };
@@ -76,17 +77,25 @@ const error = showMyTasksOnly ? errorAssigned : errorAll;
 </div>
 
       {activeTab === "Board" && (
-        <Board id={id} setIsModalNewTaskOpen={setIsModalNewTaskOpen} tasks={tasks} />
+        <Board setIsModalNewTaskOpen={setIsModalNewTaskOpen} tasks={tasks} />
       )}
       {activeTab === "List" && (
-        <List id={id} setIsModalNewTaskOpen={setIsModalNewTaskOpen} tasks={tasks} />
+        <List tasks={tasks} />
       )}
       {activeTab === "Timeline" && (
-        <Timeline id={id} setIsModalNewTaskOpen={setIsModalNewTaskOpen} tasks={tasks} />
+        <Timeline tasks={tasks} />
       )}
-      {/* {activeTab === "Table" && (
-        <Table id={id} setIsModalNewTaskOpen={setIsModalNewTaskOpen} />
-      )} */}
+      {activeTab === "Table" && (
+        <Table tasks={tasks} />
+      )}
+      <button
+        onClick={() => setIsModalNewTaskOpen(true)}
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-purple-600 text-white shadow-lg hover:bg-purple-500 transition"
+        title="Add Task"
+        aria-label="Add Task"
+      >
+        <Plus className="h-6 w-6" />
+      </button>
       
     </div>
   );

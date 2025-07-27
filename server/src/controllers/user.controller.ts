@@ -26,7 +26,8 @@ const prisma = new PrismaClient();
 
 const options = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production"
+  secure: process.env.NODE_ENV === "production",
+  maxAge: 1000 * 60 * 60 * 24 * 10,
 
 };
 

@@ -100,19 +100,37 @@ export const taskColumns: ColumnDef<Task>[] = [
     cell: ({ row }) => <div>{row.getValue("priority")}</div>,
   },
   {
-    accessorKey: "dueDate",
+    accessorKey: "startDate",
  header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Due Date
+          Start Date
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>)
     },
   cell: ({ row }) => {
-    const raw = row.getValue("dueDate") as string | number | Date | undefined;
+    const raw = row.getValue("startDate") as string | number | Date | undefined;
+    const formatted = raw ? new Date(raw).toLocaleDateString() : "-";
+    return <div>{formatted}</div>;
+  },
+  },
+  {
+    accessorKey: "endDate",
+ header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          End Date
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>)
+    },
+  cell: ({ row }) => {
+    const raw = row.getValue("endDate") as string | number | Date | undefined;
     const formatted = raw ? new Date(raw).toLocaleDateString() : "-";
     return <div>{formatted}</div>;
   },

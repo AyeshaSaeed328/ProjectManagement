@@ -10,6 +10,7 @@ import { Home, ChevronDown, ChevronRight, Folder,  LockIcon , X, AlertCircle,
   ShieldAlert,
   User,
   Users,
+  Plus,
    } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -17,12 +18,17 @@ import { usePathname } from "next/navigation";
 import { useAppDispatch, useAppSelector } from '@/app/redux'
 import { toggleSidebar } from '@/state';
 import { Project } from '@/state/api';
+import ModalNewProject from '@/app/dashboard/projects/ModalNewProject';
+
 
 
 
 const Sidebar = ({ projects }: { projects: Project[] }) => {
   const [showProjects, setShowProjects] = useState(true);
   const [showPriority, setShowPriority] = useState(true);
+  const [isModalNewProjectOpen, setIsModalNewProjectOpen] = useState(false);
+  
+    // Redux hooks
   const dispatch = useAppDispatch();
     const isSidebarOpen = useAppSelector((state) => 
       state.global.isSidebarOpen,
@@ -33,6 +39,10 @@ const Sidebar = ({ projects }: { projects: Project[] }) => {
   return (
     <aside className="fixed h-screen w-85 bg-white dark:bg-dark-bg p-4 border-r border-gray-200 dark:border-stroke-dark flex flex-col text-sm shadow-xl transition-all duration-300 z-40 overflow-y-auto dark:text-white ">
       <div className="flex h-[100%] w-full flex-col justify-start">
+        <ModalNewProject
+          isOpen={isModalNewProjectOpen}
+          onClose={() => setIsModalNewProjectOpen(false)}
+        />
         <div className="z-50 flex min-h-[56px] w-85 items-center justify-between px-6 pt-3">
           <div className="text-xl font-bold text-gray-800 dark:text-white">
             Collabster
@@ -53,12 +63,10 @@ const Sidebar = ({ projects }: { projects: Project[] }) => {
         {/* TEAM */}
         <div className="flex items-center gap-5 border-y-[1.5px] border-gray-200 px-8 py-8 dark:border-gray-700">
           <Image
-  src={user?.profilePicture!}
+  src={user?.profilePicture! || ""}
   alt="Logo"
   width={40}
   height={40}
-  // placeholder="blur"
-  // blurDataURL="/placeholder.png" // local tiny image
 />
 
           <div>
@@ -88,10 +96,20 @@ const Sidebar = ({ projects }: { projects: Project[] }) => {
 
       {/* Projects Section */}
       <SectionHeader
-        title="Projects"
-        isOpen={showProjects}
-        onToggle={() => setShowProjects(!showProjects)}
-      />
+  title="Projects"
+  isOpen={showProjects}
+  onToggle={() => setShowProjects(!showProjects)}
+  rightElement={
+    <button
+      onClick={() => setIsModalNewProjectOpen(true)} // or your logic here
+      className="hover:bg-gray-100 dark:hover:bg-gray-700 rounded p-1"
+      title="Create new project"
+    >
+      <Plus className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+    </button>
+  }
+/>
+
       {showProjects && (
         <div className="ml-4 space-y-2 mb-6 border-b-[1.5px] gap-5  border-gray-200 px-8 py-4">
           {projects.map((project) => (
@@ -176,22 +194,34 @@ const NavItem = ({ href, icon: Icon, label }: NavItemProps) => {
     </Link>
   );
 }
-
-
 const SectionHeader = ({
   title,
   isOpen,
   onToggle,
+  rightElement,
 }: {
   title: string;
   isOpen: boolean;
   onToggle: () => void;
+  rightElement?: React.ReactNode;
 }) => (
   <div
-    className="flex items-center justify-between text-gray-500 uppercase tracking-wider text-md font-semibold cursor-pointer select-none mb-6 "
+    className="flex items-center justify-between px-8 mb-2 select-none cursor-pointer"
     onClick={onToggle}
   >
-    <span>{title}</span>
-    {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+    {/* Left: Section title */}
+    <span className="text-gray-500 uppercase tracking-wider text-md font-semibold">
+      {title}
+    </span>
+
+    {/* Right: rightElement (e.g. Plus) + Chevron */}
+    <div className="flex items-center gap-2">
+      {rightElement}
+      {isOpen ? (
+        <ChevronDown className="w-4 h-4 text-gray-500" />
+      ) : (
+        <ChevronRight className="w-4 h-4 text-gray-500" />
+      )}
+    </div>
   </div>
 );

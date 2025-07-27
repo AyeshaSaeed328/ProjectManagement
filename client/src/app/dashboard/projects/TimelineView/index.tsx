@@ -1,19 +1,17 @@
-import { useAppSelector } from "@/app/redux";
+// import { useAppSelector } from "@/app/redux";
 import { DisplayOption, Gantt, ViewMode } from "@rsagiev/gantt-task-react-19";
 import "@rsagiev/gantt-task-react-19/dist/index.css";
 import React, { useMemo, useState } from "react";
 import { Task } from "@/state/api";
 
 type Props = {
-  id: string;
-  setIsModalNewTaskOpen: (isOpen: boolean) => void;
   tasks: Task[];
 };
 
 type TaskTypeItems = "task" | "milestone" | "project";
 
-const Timeline = ({ id, setIsModalNewTaskOpen, tasks }: Props) => {
-  
+const Timeline = ({ tasks }: Props) => {
+
 
   const [displayOptions, setDisplayOptions] = useState<DisplayOption>({
     viewMode: ViewMode.Day,
@@ -21,19 +19,21 @@ const Timeline = ({ id, setIsModalNewTaskOpen, tasks }: Props) => {
   });
 
   const ganttTasks = useMemo(() => {
-      const today = new Date().getTime();
-  
-      
-      return (
+    if (!tasks || tasks.length === 0) return [];
+
+    const today = new Date().getTime();
+
+
+    return (
       tasks?.map((task) => {
         const start = new Date(task.startDate as string);
         const end = new Date(task.endDate as string);
         const duration = end.getTime() - start.getTime();
         const elapsed = today - start.getTime();
-  
+
         // Clamp progress between 0 and 100
         const progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
-  
+
         return {
           start,
           end,
@@ -46,7 +46,7 @@ const Timeline = ({ id, setIsModalNewTaskOpen, tasks }: Props) => {
       }) || []
     );
   }, [tasks]);
-   
+
 
 
   const handleViewModeChange = (
@@ -61,11 +61,7 @@ const Timeline = ({ id, setIsModalNewTaskOpen, tasks }: Props) => {
 
   return (
     <div className="px-4 xl:px-6">
-      <div className="flex flex-wrap items-center justify-between gap-2 py-5">
-        <h1 className="me-2 text-lg font-bold dark:text-white">
-          Project Tasks Timeline
-        </h1>
-        <div className="relative inline-block w-64">
+        <div className="relative inline-block w-64 mb-8">
           <select
             className="focus:shadow-outline block w-full appearance-none rounded border border-gray-400 bg-white px-4 py-2 pr-8 leading-tight shadow hover:border-gray-500 focus:outline-none dark:border-dark-secondary dark:bg-dark-secondary dark:text-white"
             value={displayOptions.viewMode}
@@ -75,28 +71,26 @@ const Timeline = ({ id, setIsModalNewTaskOpen, tasks }: Props) => {
             <option value={ViewMode.Week}>Week</option>
             <option value={ViewMode.Month}>Month</option>
           </select>
-        </div>
+        
       </div>
 
       <div className="overflow-hidden rounded-md bg-white shadow dark:bg-dark-secondary dark:text-white">
         <div className="timeline">
+          {ganttTasks.length > 0 ? (
           <Gantt
-                      tasks={ganttTasks}
-                      {...displayOptions}
-                      columnWidth={displayOptions.viewMode === ViewMode.Month ? 150 : 100}
-                      listCellWidth=""
-          projectBackgroundColor="#3b0764"
-                      projectProgressColor="#ec4899"
-                      projectProgressSelectedColor="#ec4899"/>
+            tasks={ganttTasks}
+            {...displayOptions}
+            columnWidth={displayOptions.viewMode === ViewMode.Month ? 150 : 100}
+            listCellWidth=""
+            projectBackgroundColor="#3b0764"
+            projectProgressColor="#ec4899"
+            projectProgressSelectedColor="#ec4899" />):(
+              <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+    No valid tasks to display.
+  </div>
+            )}
         </div>
-        <div className="px-4 pb-5 pt-1">
-          <button
-            className="flex items-center rounded bg-blue-primary px-3 py-2 text-white hover:bg-blue-600"
-            onClick={() => setIsModalNewTaskOpen(true)}
-          >
-            Add New Task
-          </button>
-        </div>
+        
       </div>
     </div>
   );

@@ -218,9 +218,9 @@ resetPassword: build.mutation<void, { resetToken: string; newPassword: string }>
       query: () => "projects/user",
       providesTags: ["Projects"],
     }),
-    createProject: build.mutation<Project, Partial<Project>>({
+    createProject: build.mutation<ApiResponse<Project>, Partial<Project>>({
       query: (project) => ({
-        url: "projects",
+        url: "projects/create",
         method: "POST",
         body: project,
       }),
@@ -258,14 +258,15 @@ getAllTasksFromProject: build.query<ApiResponse<Task[]>, string>({
 
 
 
-    createTask: build.mutation<Task, Partial<Task>>({
-      query: (task) => ({
-        url: "tasks",
-        method: "POST",
-        body: task,
-      }),
-      invalidatesTags: ["Tasks"],
-    }),
+    createTask: build.mutation<ApiResponse<Task>, Partial<Task>>({
+  query: (task) => ({
+    url: `tasks/create`, // ✅ no /:projectId in the URL
+    method: "POST",
+    body: task, // ✅ projectId will be read from the body
+  }),
+  invalidatesTags: ["Tasks"],
+}),
+
     updateTaskInfo: build.mutation<Task, Partial<Task>>({
       query: (data) => ({
         url: `tasks/update`,
@@ -276,8 +277,20 @@ getAllTasksFromProject: build.query<ApiResponse<Task[]>, string>({
         { type: "Tasks", id },
       ],
     }),
-    getUsers: build.query<User[], void>({
-      query: () => "users",
+    assignUsersToTask: build.mutation<ApiResponse<TaskAssignment[]>, { taskId: string; userIds: string[] }>({
+  query: ({ taskId, userIds }) => ({
+    url: "tasks/add-users",
+    method: "POST",
+    body: { taskId, userIds },
+  }),
+  invalidatesTags: (result, error, { taskId }) => [
+    { type: "Tasks", id: taskId },
+    "Users",
+  ],
+}),
+
+    getUsers: build.query<ApiResponse<User[]>, void>({
+      query: () => "users/all",
       providesTags: ["Users"],
     }),
     getTeams: build.query<Team[], void>({
@@ -309,6 +322,7 @@ export const {
   useGetAllTasksFromProjectQuery,
   useCreateTaskMutation,
   useUpdateTaskInfoMutation,
+  useAssignUsersToTaskMutation,
   useSearchQuery,
   useGetUsersQuery,
   useGetTeamsQuery,

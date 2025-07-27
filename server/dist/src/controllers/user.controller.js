@@ -26,7 +26,8 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prisma = new client_1.PrismaClient();
 const options = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production"
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 1000 * 60 * 60 * 24 * 10,
 };
 const generateAccessRefreshToken = (user) => __awaiter(void 0, void 0, void 0, function* () {
     try {

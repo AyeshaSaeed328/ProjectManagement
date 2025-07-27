@@ -7,7 +7,7 @@ const router = (0, express_1.Router)();
 router.get("/assigned-by-me", auth_middleware_1.verifyJWT, task_controller_1.getTasksAssignedByUser);
 router.get("/assigned-to-me", auth_middleware_1.verifyJWT, task_controller_1.getTasksAssignedToUser);
 router.post("/create", auth_middleware_1.verifyJWT, task_controller_1.createTask);
-router.post("/add-user", auth_middleware_1.verifyJWT, task_controller_1.addUserToTask);
+router.post("/add-users", auth_middleware_1.verifyJWT, task_controller_1.addUsersToTask);
 router.patch("/update", auth_middleware_1.verifyJWT, task_controller_1.updateTaskInfo);
 router.get("/:projectId", auth_middleware_1.verifyJWT, task_controller_1.getTasksByProjectId);
 exports.default = router;

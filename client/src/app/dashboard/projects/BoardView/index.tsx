@@ -8,11 +8,8 @@ import { format } from "date-fns";
 import Image from "next/image";
 import { Status } from "@/state/api";
 import { Flag } from "lucide-react";
-import { Switch } from "@/components/ui/switch"
-import { useState } from "react";
 
 type BoardProps = {
-  id: string;
   setIsModalNewTaskOpen: (isOpen: boolean) => void;
   tasks: TaskType[]
 };
@@ -27,7 +24,7 @@ const taskStatus: Status[] = Object.keys(statusLabels) as Status[];
 
 // const taskStatus = ["To Do", "Work In Progress", "Under Review", "Completed"];
 
-const BoardView = ({ id, setIsModalNewTaskOpen, tasks }: BoardProps) => {
+const BoardView = ({ setIsModalNewTaskOpen, tasks }: BoardProps) => {
   console.log("tasks", tasks)
   
   
@@ -131,6 +128,7 @@ const TaskColumn = ({
         .map((task) => (
           <Task key={task.id} task={task} />
         ))}
+        
     </div>
   );
 };
@@ -250,6 +248,7 @@ const Task = ({ task }: TaskProps) => {
                   key={assignment.user.id}
                   src={assignment.user.profilePicture!}
                   alt={assignment.user.username}
+                  title={assignment.user.username}
                   width={30}
                   height={30}
                   className="h-8 w-8 rounded-full border-2 border-white object-cover dark:border-dark-secondary"
@@ -262,6 +261,7 @@ const Task = ({ task }: TaskProps) => {
                 key={task.author.id}
                 src={task.author.profilePicture!}
                 alt={task.author.username}
+                title={task.author.username}
                 width={30}
                 height={30}
                 className="h-8 w-8 rounded-full border-2 border-white object-cover dark:border-dark-secondary"
