@@ -10,7 +10,6 @@ import React from "react";
 import { useForm, Controller } from "react-hook-form";
 import Select from "react-select";
 import { formatISO } from "date-fns";
-import { useParams } from "next/navigation";
 
 
 type Props = {
@@ -153,19 +152,78 @@ const ModalNewTask = ({ isOpen, onClose, id }: Props) => {
         )} */}
 
         <Controller
-          control={control}
-          name="assignedUsers"
-          render={({ field }) => (
-            <Select
-              {...field}
-              options={userOptions}
-              isMulti
-              placeholder="Assign users..."
-              className="react-select-container"
-              classNamePrefix="react-select"
-            />
-          )}
-        />
+  control={control}
+  name="assignedUsers"
+  render={({ field }) => (
+    <Select
+      {...field}
+      options={userOptions}
+      isMulti
+      placeholder="Assign users..."
+      className="react-select-container"
+      classNamePrefix="react-select"
+      styles={{
+  control: (base, state) => ({
+    ...base,
+    backgroundColor: 'var(--select-bg)',
+    borderColor: state.isFocused ? '#9333ea' : 'var(--select-border)',
+    boxShadow: state.isFocused ? '0 0 0 1px #9333ea' : 'none',
+    '&:hover': {
+      borderColor: '#9333ea',
+    },
+  }),
+  menu: (base) => ({
+    ...base,
+    backgroundColor: 'var(--select-bg)',
+    zIndex: 50,
+  }),
+  menuList: (base) => ({
+    ...base,
+    backgroundColor: 'var(--select-bg)',
+  }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isSelected
+      ? '#9333ea'
+      : state.isFocused
+      ? '#a855f7'
+      : 'var(--select-bg)',
+    color: state.isSelected || state.isFocused ? 'white' : 'var(--select-text)',
+    ':active': {
+      backgroundColor: '#7c3aed', // purple-700
+    },
+  }),
+  singleValue: (base) => ({
+    ...base,
+    color: 'var(--select-text)',
+  }),
+  placeholder: (base) => ({
+    ...base,
+    color: 'var(--select-text)',
+  }),
+  multiValue: (base) => ({
+    ...base,
+    backgroundColor: '#9333ea',
+  }),
+  multiValueLabel: (base) => ({
+    ...base,
+    color: 'white',
+  }),
+  multiValueRemove: (base) => ({
+    ...base,
+    color: 'white',
+    ':hover': {
+      backgroundColor: '#7c3aed',
+      color: 'white',
+    },
+  }),
+}}
+
+
+    />
+  )}
+/>
+
 
         <button
           type="submit"

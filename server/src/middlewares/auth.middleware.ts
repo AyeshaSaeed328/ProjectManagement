@@ -29,7 +29,7 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
         profilePicture: true,
         teamId: true,
         isEmailVerified: true,
-
+        role: true
       },
     });
 

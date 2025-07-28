@@ -7,10 +7,11 @@ import List from "../ListView";
 import Timeline from "../TimelineView";
 import Table from "../TableView";
 import ModalNewTask from "@/(components)/ModalNewTask";
-import { useGetTasksAssignedByUserQuery, useGetTasksAssignedToUserQuery, useUpdateTaskInfoMutation, useGetAllTasksFromProjectQuery } from "@/state/api";
+import { useGetProjectByIdQuery, useGetTasksAssignedToUserQuery, useUpdateTaskInfoMutation, useGetAllTasksFromProjectQuery } from "@/state/api";
 import { use } from 'react';
 import { Switch } from "@/components/ui/switch";
 import { Plus } from "lucide-react";
+
 
 type Props = {
   params: { id: string };
@@ -20,6 +21,10 @@ const Project = ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = use(params)
   const [activeTab, setActiveTab] = useState("Board");
   const [isModalNewTaskOpen, setIsModalNewTaskOpen] = useState(false);
+  const { data:res, isLoading: isProjectLoading, isError } = useGetProjectByIdQuery(id as string, {
+    skip: !id,
+  });
+  const project = res?.data ?? null
 
   const [showMyTasksOnly, setShowMyTasksOnly] = useState(false)
   const {
@@ -27,23 +32,23 @@ const Project = ({ params }: { params: Promise<{ id: string }> }) => {
     isLoading: loadingAssigned,
     error: errorAssigned,
   } = useGetTasksAssignedToUserQuery(undefined, {
-    skip: !showMyTasksOnly, // only fetch when toggle is ON
+    skip: !showMyTasksOnly,
   });
-  
+
   const {
     data: allTasksRes,
     isLoading: loadingAll,
     error: errorAll,
   } = useGetAllTasksFromProjectQuery(id, {
-    skip: showMyTasksOnly, // only fetch when toggle is OFF
+    skip: showMyTasksOnly,
   });
-  
+
   const tasks = showMyTasksOnly
     ? assignedRes?.data ?? []
     : allTasksRes?.data ?? [];
 
-    const isLoading = showMyTasksOnly ? loadingAssigned : loadingAll;
-const error = showMyTasksOnly ? errorAssigned : errorAll;
+  const isLoading = showMyTasksOnly ? loadingAssigned : loadingAll;
+  const error = showMyTasksOnly ? errorAssigned : errorAll;
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>An error occurred while fetching tasks</div>;
@@ -55,26 +60,26 @@ const error = showMyTasksOnly ? errorAssigned : errorAll;
         onClose={() => setIsModalNewTaskOpen(false)}
         id={id}
       />
-  <div className="flex flex-col">
-  <ProjectHeader activeTab={activeTab} setActiveTab={setActiveTab} />
-  
-  <div className="flex items-center justify-between px-4 py-2 mx-4 text-gray-600 dark:text-neutral-400">
-    <h2 className="text-xl gap-2 font-semibold mt-3">
-      {showMyTasksOnly ? "My Tasks" : "All Tasks"}
-    </h2>
+      <div className="flex flex-col">
+        <ProjectHeader activeTab={activeTab} setActiveTab={setActiveTab} project={project}/>
 
-    <div className="flex items-center gap-2">
-      <Switch
-        id="show-my-tasks"
-        checked={showMyTasksOnly}
-        onCheckedChange={setShowMyTasksOnly}
-      />
-      <label htmlFor="show-my-tasks" className="text-xs font-extralight">
-        Show My Tasks Only
-      </label>
-    </div>
-  </div>
-</div>
+        <div className="flex items-center justify-between px-4 py-2 mx-4 text-gray-600 dark:text-neutral-400">
+          <h2 className="text-xl gap-2 font-semibold mt-3">
+            {showMyTasksOnly ? "My Tasks" : "All Tasks"}
+          </h2>
+
+          <div className="flex items-center gap-2">
+            <Switch
+              id="show-my-tasks"
+              checked={showMyTasksOnly}
+              onCheckedChange={setShowMyTasksOnly}
+            />
+            <label htmlFor="show-my-tasks" className="text-xs font-extralight">
+              Show My Tasks Only
+            </label>
+          </div>
+        </div>
+      </div>
 
       {activeTab === "Board" && (
         <Board setIsModalNewTaskOpen={setIsModalNewTaskOpen} tasks={tasks} />
@@ -96,7 +101,7 @@ const error = showMyTasksOnly ? errorAssigned : errorAll;
       >
         <Plus className="h-6 w-6" />
       </button>
-      
+
     </div>
   );
 };

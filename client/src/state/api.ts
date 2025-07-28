@@ -1,6 +1,6 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { createApi } from "@reduxjs/toolkit/query/react";
 import { fetchBaseQueryWithReauth } from "./fetchBaseQueryWithReauth";
-import { get } from "http";
+
 
 
 export interface Project {
@@ -11,6 +11,7 @@ export interface Project {
   endDate?: string;
   status: ProjectStatus;
   managerId: string;
+  manager: User
 }
 
 // api.ts or types.ts (wherever you define types)
@@ -218,11 +219,23 @@ resetPassword: build.mutation<void, { resetToken: string; newPassword: string }>
       query: () => "projects/user",
       providesTags: ["Projects"],
     }),
+    getProjectById: build.query<ApiResponse<Project>, string>({
+      query: (id) => `projects/${id}`,
+      providesTags: (result) =>
+        result ? [{ type: "Projects", id: result.data.id }] : [],
+    }),
     createProject: build.mutation<ApiResponse<Project>, Partial<Project>>({
       query: (project) => ({
         url: "projects/create",
         method: "POST",
         body: project,
+      }),
+      invalidatesTags: ["Projects"],
+    }),
+    deleteProject: build.mutation<ApiResponse<null>, { id: string }>({
+      query: ({ id }) => ({
+        url: `projects/delete/${id}`,
+        method: "DELETE",
       }),
       invalidatesTags: ["Projects"],
     }),
@@ -293,8 +306,8 @@ getAllTasksFromProject: build.query<ApiResponse<Task[]>, string>({
       query: () => "users/all",
       providesTags: ["Users"],
     }),
-    getTeams: build.query<Team[], void>({
-      query: () => "teams",
+    getTeams: build.query<ApiResponse<Team[]>, void>({
+      query: () => "teams/all",
       providesTags: ["Teams"],
     }),
     search: build.query<SearchResults, string>({
@@ -316,7 +329,9 @@ export const {
   useResendVerificationEmailMutation,
 
   useGetProjectsQuery,
+  useGetProjectByIdQuery,
   useCreateProjectMutation,
+  useDeleteProjectMutation,
   useGetTasksAssignedByUserQuery,
   useGetTasksAssignedToUserQuery,
   useGetAllTasksFromProjectQuery,

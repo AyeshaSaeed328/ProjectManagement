@@ -17,7 +17,8 @@ export function generateAccessToken(user: User)
     {
       id: user.id,
       email: user.email,
-      username: user.username
+      username: user.username,
+      role: user.role,
     },
     ACCESS_TOKEN_SECRET,
     { expiresIn: ACCESS_TOKEN_EXPIRY }

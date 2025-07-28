@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import StoreProvider from './StoreProvider'
 import ClientAuthLoader from "./ClientAuthLoader";
+import { Toaster } from "@/components/ui/sonner";
 
 
 export const metadata: Metadata = {
@@ -19,7 +20,9 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <StoreProvider>
-          <ClientAuthLoader />{children}</StoreProvider></body>
+          <ClientAuthLoader />{children}</StoreProvider>
+          <Toaster/>
+          </body>
     </html>
   );
 }

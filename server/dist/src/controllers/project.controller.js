@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUserProjects = exports.updateProject = exports.deleteProject = exports.createProject = exports.getAllProjects = void 0;
+exports.getProjectById = exports.getUserProjects = exports.updateProject = exports.deleteProject = exports.createProject = exports.getAllProjects = void 0;
 const asyncHandler_1 = __importDefault(require("../utils/asyncHandler"));
 const ApiError_1 = require("../utils/ApiError");
 const ApiResponse_1 = require("../utils/ApiResponse");
@@ -79,7 +79,9 @@ const getUserProjects = (0, asyncHandler_1.default)((req, res) => __awaiter(void
 exports.getUserProjects = getUserProjects;
 // CREATE project
 const createProject = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { name, description, startDate, endDate, status, managerId } = req.body;
+    var _a;
+    const managerId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    const { name, description, startDate, endDate, status } = req.body;
     const newProject = yield prisma.project.create({
         data: {
             name,
@@ -100,22 +102,46 @@ const createProject = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0
 exports.createProject = createProject;
 // DELETE project
 const deleteProject = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    // console.log("user",req.user)
     if ((req === null || req === void 0 ? void 0 : req.user.role) !== client_2.UserRole.MANAGER) {
-        throw new ApiError_1.ApiError(403, "Forbidden");
+        throw new ApiError_1.ApiError(403, `Forbidden ${(_a = req.user) === null || _a === void 0 ? void 0 : _a.role}`);
     }
     const { id } = req.params;
-    const deleted = yield prisma.project.delete({
-        where: { id },
+    const tasks = yield prisma.task.findMany({
+        where: { projectId: id },
     });
-    if (!deleted) {
-        throw new ApiError_1.ApiError(404, "Project not found");
-    }
-    return res.status(200).json(new ApiResponse_1.ApiResponse(200, deleted, "Project deleted successfully"));
+    const taskIds = tasks.map((task) => task.id);
+    yield prisma.$transaction([
+        prisma.taskAssignment.deleteMany({
+            where: { taskId: { in: taskIds } },
+        }),
+        prisma.comment.deleteMany({
+            where: { taskId: { in: taskIds } },
+        }),
+        prisma.attachment.deleteMany({
+            where: { taskId: { in: taskIds } },
+        }),
+        prisma.task.deleteMany({
+            where: { projectId: id },
+        }),
+        prisma.projectTeam.deleteMany({
+            where: { projectId: id },
+        }),
+        prisma.project.delete({
+            where: { id },
+        })
+    ]);
+    return res.status(200).json(new ApiResponse_1.ApiResponse(200, null, "Project deleted successfully"));
 }));
 exports.deleteProject = deleteProject;
 // UPDATE project
 const updateProject = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id } = req.params;
+    var _a;
+    if (((_a = req.user) === null || _a === void 0 ? void 0 : _a.role) !== client_2.UserRole.MANAGER) {
+        throw new ApiError_1.ApiError(403, "Forbidden");
+    }
+    const { id } = req.body;
     const { name, description, startDate, endDate, status } = req.body;
     if (!name && !description && !startDate && !endDate && !status) {
         throw new ApiError_1.ApiError(400, "No fields to update");
@@ -141,3 +167,17 @@ const updateProject = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0
     return res.status(200).json(new ApiResponse_1.ApiResponse(200, updatedProject, "Project updated successfully"));
 }));
 exports.updateProject = updateProject;
+const getProjectById = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    const project = yield prisma.project.findUnique({
+        where: { id },
+        include: {
+            manager: true
+        }
+    });
+    if (!project) {
+        throw new ApiError_1.ApiError(404, "Project not found");
+    }
+    return res.status(200).json(new ApiResponse_1.ApiResponse(200, project, "Project fetched successfully"));
+}));
+exports.getProjectById = getProjectById;

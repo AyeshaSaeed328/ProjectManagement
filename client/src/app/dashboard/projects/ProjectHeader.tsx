@@ -10,13 +10,15 @@ import {
 } from "lucide-react";
 import React, { useState } from "react";
 import ModalNewProject from "./ModalNewProject";
+import { Project } from "@/state/api";
 
 type Props = {
   activeTab: string;
   setActiveTab: (tabName: string) => void;
+  project: Project | null
 };
 
-const ProjectHeader = ({ activeTab, setActiveTab }: Props) => {
+const ProjectHeader = ({ activeTab, setActiveTab, project }: Props) => {
   const [isModalNewProjectOpen, setIsModalNewProjectOpen] = useState(false);
 
   return (
@@ -25,9 +27,9 @@ const ProjectHeader = ({ activeTab, setActiveTab }: Props) => {
         isOpen={isModalNewProjectOpen}
         onClose={() => setIsModalNewProjectOpen(false)}
       />
-      <div className="pb-6 pt-6 lg:pb-4 lg:pt-8 bg-white dark:bg-dark-bg">
+      <div className=" pt-6 lg:pt-8 bg-white dark:bg-dark-bg">
         <Header
-          name="Product Design Development"
+          name={project?.name ?? ""}
           buttonComponent={
             <button
               className="flex items-center rounded-md bg-purple-600 px-3 py-2 text-white font-semibold hover:bg-purple-500"
@@ -37,6 +39,21 @@ const ProjectHeader = ({ activeTab, setActiveTab }: Props) => {
             </button>
           }
         />
+      </div>
+      <div className="flex items-center space-x-3 mt-2 pb-6 lg:pb-8 px-4">
+        <img
+          src={project?.manager?.profilePicture ?? "/default-avatar.png"}
+          alt="Manager Profile"
+          className="w-10 h-10 rounded-full object-cover border"
+        />
+        <div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            <span className="font-medium text-gray-900 dark:text-white">
+              {project?.manager?.username ?? "Unknown"}
+            </span>
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-500">Project Manager</p>
+        </div>
       </div>
 
       {/* TABS */}
@@ -100,9 +117,8 @@ const TabButton = ({ name, icon, setActiveTab, activeTab }: TabButtonProps) => {
 
   return (
     <button
-      className={`relative flex items-center font-semibold gap-2 px-1 py-2 text-gray-500 after:absolute after:-bottom-[9px] after:left-0 after:h-[1px] after:w-full hover:text-purple-600 dark:text-neutral-500 dark:hover:text-purple-400 sm:px-2 lg:px-4 ${
-        isActive ? "text-purple-600 after:bg-purple-600 dark:text-white" : ""
-      }`}
+      className={`relative flex items-center font-semibold gap-2 px-1 py-2 text-gray-500 after:absolute after:-bottom-[9px] after:left-0 after:h-[1px] after:w-full hover:text-purple-600 dark:text-neutral-500 dark:hover:text-purple-400 sm:px-2 lg:px-4 ${isActive ? "text-purple-600 after:bg-purple-600 dark:text-white" : ""
+        }`}
       onClick={() => setActiveTab(name)}
     >
       {icon}

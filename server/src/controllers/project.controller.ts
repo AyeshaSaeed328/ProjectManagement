@@ -106,7 +106,8 @@ const getUserProjects = asyncHandler(
 // CREATE project
 const createProject = asyncHandler(
   async (req: Request, res: Response): Promise<Response<ApiResponse<Project>>> => {
-    const { name, description, startDate, endDate, status, managerId } = req.body;
+    const managerId = req.user?.id;
+    const { name, description, startDate, endDate, status } = req.body;
 
     const newProject = await prisma.project.create({
       data: {
@@ -133,22 +134,50 @@ const createProject = asyncHandler(
 
 // DELETE project
 const deleteProject = asyncHandler(
-  async (req: Request, res: Response): Promise<Response<ApiResponse<Project>>> => {
+  async (req: Request, res: Response): Promise<Response<ApiResponse<null>>> => {
+    // console.log("user",req.user)
     if (req?.user!.role !== UserRole.MANAGER) {
-      throw new ApiError(403, "Forbidden");
+      throw new ApiError(403, `Forbidden ${req.user?.role}`);
     }
     const { id } = req.params;
 
-    const deleted = await prisma.project.delete({
-      where: { id },
+    const tasks = await prisma.task.findMany({
+      where: { projectId: id },
     });
 
-    if (!deleted) {
-      throw new ApiError(404, "Project not found");
-    }
+    const taskIds = tasks.map((task) => task.id);
+
+    await prisma.$transaction([
+
+    prisma.taskAssignment.deleteMany({
+      where: { taskId: { in: taskIds } },
+    }),
+
+   prisma.comment.deleteMany({
+      where: { taskId: { in: taskIds } },
+    }),
+
+    prisma.attachment.deleteMany({
+      where: { taskId: { in: taskIds } },
+    }),
+
+    prisma.task.deleteMany({
+      where: { projectId: id },
+    }),
+
+    prisma.projectTeam.deleteMany({
+      where: { projectId: id },
+    }),
+
+    prisma.project.delete({
+      where: { id },
+    })
+  ]);
+
+   
 
     return res.status(200).json(
-      new ApiResponse<Project>(200, deleted, "Project deleted successfully")
+      new ApiResponse<null>(200, null, "Project deleted successfully")
     );
   }
 );
@@ -156,7 +185,10 @@ const deleteProject = asyncHandler(
 // UPDATE project
 const updateProject = asyncHandler(
   async (req: Request, res: Response): Promise<Response<ApiResponse<Project>>> => {
-    const { id } = req.params;
+    if (req.user?.role !== UserRole.MANAGER) {
+      throw new ApiError(403, "Forbidden");
+    }
+    const { id } = req.body;
     const { name, description, startDate, endDate, status } = req.body;
     if (!name && !description && !startDate && !endDate && !status) {
       throw new ApiError(400, "No fields to update");
@@ -182,11 +214,32 @@ const updateProject = asyncHandler(
     );
   }
 );
+const getProjectById = asyncHandler(
+  async (req: Request, res: Response): Promise<Response<ApiResponse<Project>>> => {
+    const { id } = req.params;
+
+    const project = await prisma.project.findUnique({
+      where: { id },
+      include:{
+        manager: true
+      }
+    });
+
+    if (!project) {
+      throw new ApiError(404, "Project not found");
+    }
+
+    return res.status(200).json(
+      new ApiResponse(200, project, "Project fetched successfully")
+    );
+  }
+);
 
 export {
   getAllProjects,
   createProject,
   deleteProject,
   updateProject,
-  getUserProjects
+  getUserProjects,
+  getProjectById
 };

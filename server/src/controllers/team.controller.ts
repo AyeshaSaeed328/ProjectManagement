@@ -30,6 +30,36 @@ const getAllTeams = asyncHandler(
   }
 );
 
+const getUserTeams = asyncHandler(
+  async (req: Request, res: Response): Promise<Response<ApiResponse<Team[]>>> => {
+    const userId = req.params.id;
+    const teams = await prisma.team.findMany({
+      where: {
+        members: {
+          some: {
+            id: userId
+          }
+        }
+      },
+      include: {
+        members: true,
+        projectTeams: true,
+        teamLead: {
+          select: {
+            username: true,
+            profilePicture: true
+          }
+        },
+        
+      }
+    });
+
+    return res.status(200).json(
+      new ApiResponse(200, teams, "Teams retrieved successfully")
+    );
+  }
+);
+
 const createTeam = asyncHandler(
   async (req:Request, res: Response): Promise<Response<ApiResponse<Team>>> => {
     
@@ -83,5 +113,5 @@ const updateTeam = asyncHandler(
   }
 );
 
-export { createTeam, getAllTeams, updateTeam };
+export { createTeam, getAllTeams, updateTeam, getUserTeams };
 

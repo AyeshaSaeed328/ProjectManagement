@@ -11,6 +11,7 @@ declare global {
       profilePicture: string | null;
       isEmailVerified?: boolean;
       teamId?: string | null;
+      role?: string;
     }
 
     interface Request {

@@ -16,7 +16,8 @@ function generateAccessToken(user) {
     return jsonwebtoken_1.default.sign({
         id: user.id,
         email: user.email,
-        username: user.username
+        username: user.username,
+        role: user.role,
     }, ACCESS_TOKEN_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
 }
 function generateRefreshToken(user) {

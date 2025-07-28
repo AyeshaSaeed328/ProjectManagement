@@ -180,6 +180,10 @@ body,
   --sidebar-accent-foreground: oklch(0.21 0.034 264.665);
   --sidebar-border: oklch(0.928 0.006 264.531);
   --sidebar-ring: oklch(0.707 0.022 261.325);
+    --select-bg: #ffffff; /* Light mode background */
+  --select-border: #d1d5db; /* Tailwind's gray-300 */
+  --select-text: #111827; /* Tailwind's gray-900 */
+  --select-hover: #f3f4f6; /* Tailwind's gray-100 */
 }
 
 .dark {
@@ -214,6 +218,10 @@ body,
   --sidebar-accent-foreground: oklch(0.985 0.002 247.839);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
+   --select-bg: var(--color-dark-tertiary);     /* Tailwind: gray-800 */
+  --select-border: #374151;   /* Tailwind: gray-700 */
+  --select-text: #f3f4f6;     /* Tailwind: gray-100 */
+  --select-hover: #374151;    /* Tailwind: gray-700 */
 }
 
 @layer base {

@@ -36,6 +36,7 @@ exports.verifyJWT = (0, asyncHandler_1.default)((req, _, next) => __awaiter(void
                 profilePicture: true,
                 teamId: true,
                 isEmailVerified: true,
+                role: true
             },
         });
         if (!user) {

@@ -9,4 +9,5 @@ router.post("/create", auth_middleware_1.verifyJWT, project_controller_1.createP
 router.delete("/delete/:id", auth_middleware_1.verifyJWT, project_controller_1.deleteProject);
 router.patch("/update/:id", auth_middleware_1.verifyJWT, project_controller_1.updateProject);
 router.get("/user", auth_middleware_1.verifyJWT, project_controller_1.getUserProjects);
+router.get("/:id", auth_middleware_1.verifyJWT, project_controller_1.getProjectById);
 exports.default = router;
