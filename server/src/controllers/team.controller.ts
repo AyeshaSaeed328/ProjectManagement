@@ -11,17 +11,7 @@ const prisma = new PrismaClient();
 const getAllTeams = asyncHandler(
   async (req: Request, res: Response): Promise<Response<ApiResponse<Team[]>>> => {
     const teams = await prisma.team.findMany({
-      include: {
-        members: true,
-        projectTeams: true,
-        teamLead: {
-          select: {
-            username: true,
-            profilePicture: true
-          }
-        },
-        
-      }
+         
     });
 
     return res.status(200).json(

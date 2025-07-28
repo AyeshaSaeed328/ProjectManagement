@@ -19,18 +19,7 @@ const ApiResponse_1 = require("../utils/ApiResponse");
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 const getAllTeams = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const teams = yield prisma.team.findMany({
-        include: {
-            members: true,
-            projectTeams: true,
-            teamLead: {
-                select: {
-                    username: true,
-                    profilePicture: true
-                }
-            },
-        }
-    });
+    const teams = yield prisma.team.findMany({});
     return res.status(200).json(new ApiResponse_1.ApiResponse(200, teams, "Teams retrieved successfully"));
 }));
 exports.getAllTeams = getAllTeams;

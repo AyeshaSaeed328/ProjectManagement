@@ -1,8 +1,8 @@
 import Router from 'express'
-import {assignTeamToProject} from '../controllers/projectTeam.controller'
+import { assignTeamsToProject } from '../controllers/projectTeam.controller'
 
 const router = Router()
 
-router.post('/assign', assignTeamToProject)
+router.post('/assign', assignTeamsToProject)
 
 export default router

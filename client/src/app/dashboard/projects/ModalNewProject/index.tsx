@@ -1,34 +1,9 @@
+
+
+
 import Modal from "@/(components)/Modal";
-import {
-  Priority,
-  Status,
-  useCreateTaskMutation,
-  useAssignUsersToTaskMutation,
-  useGetTeamsQuery,
-} from "@/state/api";
-import React from "react";
-import { useForm, Controller } from "react-hook-form";
-import Select from "react-select";
-import { formatISO } from "date-fns";
-
-
-type Props = {
-  isOpen: boolean;
-  onClose: () => void;
-  id?: string | undefined;
-
-};
-
-type FormData = {
-  title: string;
-  description?: string;
-  status: Status;
-  priority: Priority;
-  tags?: string;
-  startDate?: string;
-  dueDate?: string;import Modal from "@/(components)/Modal";
 import React, { useEffect } from "react";
-import { useCreateProjectMutation, useGetTeamsQuery } from "@/state/api";
+import { useCreateProjectMutation, useGetTeamsQuery, useAssignTeamsToProjectsMutation } from "@/state/api";
 import { useForm, Controller } from "react-hook-form";
 import Select from "react-select";
 
@@ -59,6 +34,7 @@ const ModalNewProject = ({ isOpen, onClose, initialData }: Props) => {
 
   const [createProject, { isLoading: isCreating }] = useCreateProjectMutation();
   // const [updateProject, { isLoading: isUpdating }] = useUpdateProjectMutation();
+  const [assignTeams, { isLoading: isAssigning }] = useAssignTeamsToProjectsMutation();
   const {data:teamsRes, isLoading:isTeamsLoading, isError} = useGetTeamsQuery();
   const teams = teamsRes?.data ?? []
 
@@ -103,14 +79,22 @@ const ModalNewProject = ({ isOpen, onClose, initialData }: Props) => {
     // } else {
     //   await createProject({ ...payload });
     // }
-    await createProject({ ...payload });
+    const createdProject = await createProject({ ...payload }).unwrap();
+    
+    if (data.teams?.length) {
+  await assignTeams({
+    projectId: createdProject.data.id,
+    teamIds: data.teams.map((team) => team.value),
+  });
+}
+
 
     onClose();
     reset(); // optional
   };
   const teamOptions = teams.map((team) => ({
     label: team.teamName,
-    value: team.teamId
+    value: team.id
   }));
 
   const inputStyles =

@@ -98,10 +98,14 @@ export interface SearchResults {
 }
 
 export interface Team {
-  teamId: string;
+  id: string;
   teamName: string;
-  productOwnerUserId?: string;
-  projectManagerUserId?: string;
+  teamLeadId: string
+}
+
+export interface ProjectTeams{
+  projectId: string;
+  teamId: string;
 }
 
 export interface Comment {
@@ -302,6 +306,20 @@ getAllTasksFromProject: build.query<ApiResponse<Task[]>, string>({
   ],
 }),
 
+assignTeamsToProjects: build.mutation<ApiResponse<ProjectTeams[]>, {projectId: string; teamIds: string[]}>({
+  query: ({projectId, teamIds}) => ({
+    url:"project-team/assign",
+    method: "POST",
+    body: {projectId, teamIds}
+  }),
+  invalidatesTags:(result, error, {projectId}) => [
+    {type: "Projects", id:projectId},
+    "Teams",
+  ]
+  
+}),
+
+
     getUsers: build.query<ApiResponse<User[]>, void>({
       query: () => "users/all",
       providesTags: ["Users"],
@@ -341,4 +359,5 @@ export const {
   useSearchQuery,
   useGetUsersQuery,
   useGetTeamsQuery,
+  useAssignTeamsToProjectsMutation,
 } = api;

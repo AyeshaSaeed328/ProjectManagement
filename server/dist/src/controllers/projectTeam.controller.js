@@ -12,39 +12,32 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.assignTeamToProject = void 0;
+exports.assignTeamsToProject = void 0;
 const asyncHandler_1 = __importDefault(require("../utils/asyncHandler"));
 const ApiError_1 = require("../utils/ApiError");
 const ApiResponse_1 = require("../utils/ApiResponse");
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
-exports.assignTeamToProject = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { projectId, teamId } = req.body;
-    if (!projectId || !teamId) {
-        throw new ApiError_1.ApiError(400, "projectId and teamId are required");
+const assignTeamsToProject = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { projectId, teamIds } = req.body;
+    if (!projectId || !Array.isArray(teamIds) || teamIds.length === 0) {
+        throw new ApiError_1.ApiError(400, "Missing required fields: projectId and at least one teamId");
     }
-    const alreadyLinked = yield prisma.projectTeam.findUnique({
+    const existingRelations = yield prisma.projectTeam.findMany({
         where: {
-            teamId_projectId: {
-                teamId,
-                projectId,
-            },
-        },
-    });
-    if (alreadyLinked) {
-        throw new ApiError_1.ApiError(400, "Team is already assigned to this project");
-    }
-    const relation = yield prisma.projectTeam.create({
-        data: {
-            teamId,
             projectId,
+            teamId: { in: teamIds },
         },
     });
-    if (!relation) {
-        throw new ApiError_1.ApiError(500, "Failed to assign team to project");
-    }
-    return res.status(201).json(new ApiResponse_1.ApiResponse(201, relation, "Team assigned to project successfully"));
+    const existingTeamIds = new Set(existingRelations.map((rel) => rel.teamId));
+    const newTeamIds = teamIds.filter((id) => !existingTeamIds.has(id));
+    const newRelations = yield prisma.projectTeam.createMany({
+        data: newTeamIds.map((teamId) => ({
+            projectId,
+            teamId,
+        })),
+        skipDuplicates: true, // defensive
+    });
+    return res.status(201).json(new ApiResponse_1.ApiResponse(201, newRelations, `Assigned ${newTeamIds.length} team(s) to project successfully`));
 }));
-exports.default = {
-    assignTeamToProject: exports.assignTeamToProject,
-};
+exports.assignTeamsToProject = assignTeamsToProject;

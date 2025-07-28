@@ -12,6 +12,7 @@ const ProjectCard = ({ project }: Props) => {
       <p>{project.description}</p>
       <p>Start Date: {project.startDate}</p>
       <p>End Date: {project.endDate}</p>
+      <p>Manager: {project.manager.username}</p>
     </div>
   );
 };
