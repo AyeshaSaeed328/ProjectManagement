@@ -13,7 +13,8 @@ import {
   Users,
   Plus,
   Trash2,
-  Pencil
+  Pencil,
+  MessageCircleMore,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -32,6 +33,7 @@ import {
   AlertDialogDescription,
   AlertDialogCancel,
   AlertDialogAction,
+  
 } from "@/components/ui/alert-dialog"
 import { useDeleteProjectMutation, useGetProjectByIdQuery } from '@/state/api';
 import { toast } from 'sonner';
@@ -132,7 +134,7 @@ const Sidebar = ({ projects }: { projects: Project[] }) => {
           <nav className="z-10 w-full">
             <NavItem icon={Home} label="Home" href="/dashboard" />
             <NavItem icon={Briefcase} label="Timeline" href="/dashboard/timeline" />
-            <NavItem icon={User} label="Users" href="/dashboard/users" />
+            <NavItem icon={MessageCircleMore} label="Chat" href="/dashboard/chat" />
             <NavItem icon={Users} label="My Team" href="/dashboard/myTeam" />
           </nav>
         </div>
