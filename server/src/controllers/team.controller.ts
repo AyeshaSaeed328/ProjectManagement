@@ -103,5 +103,41 @@ const updateTeam = asyncHandler(
   }
 );
 
-export { createTeam, getAllTeams, updateTeam, getUserTeams };
+const getUserTeam = asyncHandler(
+  async (req: Request, res: Response): Promise<Response<ApiResponse<Team>>> => {
+     const userId = req.user?.id;
+    if (!userId) {
+      throw new ApiError(401, "Unauthorized");
+    }
+    const team = await prisma.team.findFirst({
+      where: {
+        members: {
+          some: {
+            id: userId
+          }
+        }
+      },
+      include: {
+        members: true,
+        projectTeams: true,
+        teamLead: {
+          select: {
+            username: true,
+            profilePicture: true
+          }
+        },
+      }
+    });
+
+    if (!team) {
+      throw new ApiError(404, "Team not found");
+    }
+
+    return res.status(200).json(
+      new ApiResponse(200, team, "Team retrieved successfully")
+    );
+  }
+);
+
+export { createTeam, getAllTeams, updateTeam, getUserTeam };
 

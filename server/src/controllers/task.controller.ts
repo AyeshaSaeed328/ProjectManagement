@@ -198,43 +198,54 @@ const addUsersToTask = asyncHandler(
   async (req: Request, res: Response): Promise<Response<ApiResponse<TaskAssignment[]>>> => {
     const { taskId, userIds } = req.body;
 
-    // ✅ Validate
-    if (!taskId || !Array.isArray(userIds) || userIds.length === 0) {
-      throw new ApiError(400, "Missing required fields: taskId and at least one userId");
+    if (!taskId || !Array.isArray(userIds)) {
+      throw new ApiError(400, "Missing required fields: taskId and userIds array");
     }
 
-    // ✅ Get existing assignments to avoid duplicates
-    const existingAssignments = await prisma.taskAssignment.findMany({
-      where: {
-        taskId,
-        userId: { in: userIds },
-      },
+    await prisma.taskAssignment.deleteMany({
+      where: { taskId },
     });
 
-    const existingUserIds = new Set(existingAssignments.map((a) => a.userId));
+    let createdAssignments: Prisma.BatchPayload | undefined;
 
-    // ✅ Filter out already assigned users
-    const newUserIds = userIds.filter((id) => !existingUserIds.has(id));
+    if (userIds.length > 0) {
+      createdAssignments = await prisma.taskAssignment.createMany({
+        data: userIds.map((userId: string) => ({
+          taskId,
+          userId,
+        })),
+        skipDuplicates: true,
+      });
+    }
 
-    // ✅ Create new assignments in bulk
-    const newAssignments = await prisma.taskAssignment.createMany({
-      data: newUserIds.map((userId) => ({
-        taskId,
-        userId,
-      })),
-      skipDuplicates: true, // just in case
-    });
-
-    return res.status(201).json(
+    return res.status(200).json(
       new ApiResponse(
-        201,
-        newAssignments,
-        `Assigned ${newUserIds.length} user(s) to task successfully`
+        200,
+        createdAssignments,
+        `Task user assignments updated successfully`
       )
     );
   }
 );
 
+const getTaskById = asyncHandler(
+  async (req: Request, res: Response): Promise<Response<ApiResponse<Task>>> => {
+    const { id } = req.params;
+
+    const task = await prisma.task.findUnique({
+      where: { id },
+      include: {
+        taskAssignments:true
+      },
+    });
+
+    if (!task) {
+      throw new ApiError(404, "Task not found");
+    }
+
+    return res.status(200).json(new ApiResponse<Task>(200, task, "Task fetched successfully"));
+  }
+);
 
 const updateTaskInfo = asyncHandler(
   async (req: Request, res: Response): Promise<Response<ApiResponse<Task>>> => {
@@ -292,6 +303,34 @@ const updateTaskInfo = asyncHandler(
   }
 );
 
+const deleteTask = asyncHandler(
+  async (req: Request, res: Response): Promise<Response<ApiResponse<null>>> => {
+    const { id } = req.params;
+    const user = req.user;
+    if (user?.role !== "MANAGER") {
+      throw new ApiError(403, "Forbidden");
+    }
+
+    await prisma.comment.deleteMany({
+      where: { taskId: id },
+    });
+
+    await prisma.attachment.deleteMany({
+      where: { taskId: id },
+    });
+
+    await prisma.taskAssignment.deleteMany({
+      where: { taskId: id },
+    });
+
+
+    await prisma.task.delete({
+      where: { id },
+    });
+
+    return res.status(204).json(new ApiResponse(204, null, "Task deleted successfully"));
+  }
+);
 
 export {
   getTasksAssignedByUser,
@@ -299,5 +338,7 @@ export {
   createTask,
   addUsersToTask,
   updateTaskInfo,
-  getTasksByProjectId
+  getTasksByProjectId,
+  getTaskById,
+  deleteTask
 };

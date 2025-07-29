@@ -11,10 +11,10 @@ export interface Project {
   endDate?: string;
   status: ProjectStatus;
   managerId: string;
-  manager: User
+  manager: User;
+  teams: ProjectTeams[];
 }
 
-// api.ts or types.ts (wherever you define types)
 
 export enum Status {
   TODO = "TODO",
@@ -59,7 +59,7 @@ export interface User {
   role?: UserRole;
   loginType?: UserLoginType;
 
-  
+
 }
 
 export interface Attachment {
@@ -100,10 +100,12 @@ export interface SearchResults {
 export interface Team {
   id: string;
   teamName: string;
-  teamLeadId: string
+  teamLeadId: string;
+  teamLead: Partial<User>;
+  members: User[];
 }
 
-export interface ProjectTeams{
+export interface ProjectTeams {
   projectId: string;
   teamId: string;
 }
@@ -122,12 +124,16 @@ type ApiResponse<T> = {
   data: T;
 };
 
-export interface TaskAssignment{
+export interface TaskAssignment {
   id: string
   userId: string
   taskId: string
   user: User
 }
+interface UpdateProjectInput extends Partial<Project> {
+  teamIds?: string[];
+}
+
 
 
 export const api = createApi({
@@ -137,14 +143,14 @@ export const api = createApi({
   endpoints: (build) => ({
 
     registerUser: build.mutation<ApiResponse<{ user: User }>,
-    Partial<User>>({
-      query: (userData) => ({
-        url: "users/register",
-        method: "POST",
-        body: userData,
+      Partial<User>>({
+        query: (userData) => ({
+          url: "users/register",
+          method: "POST",
+          body: userData,
+        }),
+        invalidatesTags: ["Users", "Auth"],
       }),
-      invalidatesTags: ["Users", "Auth"],
-    }),
 
     loginUser: build.mutation<
       ApiResponse<{ user: User }>,
@@ -187,19 +193,19 @@ export const api = createApi({
       invalidatesTags: ["Auth"],
     }),
     forgotPassword: build.mutation<void, { email: string }>({
-  query: (body) => ({
-    url: "users/forgot-password",
-    method: "POST",
-    body,
-  }),
-}),
-resetPassword: build.mutation<void, { resetToken: string; newPassword: string }>({
-  query: ({ resetToken, newPassword }) => ({
-    url: `users/reset-password/${resetToken}`,
-    method: "POST",
-    body: { newPassword },
-  }),
-}),
+      query: (body) => ({
+        url: "users/forgot-password",
+        method: "POST",
+        body,
+      }),
+    }),
+    resetPassword: build.mutation<void, { resetToken: string; newPassword: string }>({
+      query: ({ resetToken, newPassword }) => ({
+        url: `users/reset-password/${resetToken}`,
+        method: "POST",
+        body: { newPassword },
+      }),
+    }),
 
     verifyEmail: build.mutation<void, { token: string }>({
       query: (token) => ({
@@ -243,6 +249,17 @@ resetPassword: build.mutation<void, { resetToken: string; newPassword: string }>
       }),
       invalidatesTags: ["Projects"],
     }),
+    updateProject: build.mutation<ApiResponse<Project>, UpdateProjectInput>({
+      query: (project) => ({
+        url: `projects/update/${project.id}`,
+        method: "PATCH",
+        body: project,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        "Projects",
+        "Teams",
+      ],
+    }),
     // getTasks: build.query<Task[], { projectId: string }>({
     //   query: ({ projectId }) => `tasks?projectId=${projectId}`,
     //   providesTags: (result) =>
@@ -251,38 +268,43 @@ resetPassword: build.mutation<void, { resetToken: string; newPassword: string }>
     //       : [{ type: "Tasks" as const }],
     // }),
     getTasksAssignedByUser: build.query<ApiResponse<Task[]>, void>({
-  query: () => "tasks/assigned-by-me",
-  providesTags: (result) =>
-    result
-      ? result.data.map(({ id }) => ({ type: "Tasks" as const, id }))
-      : [{ type: "Tasks" as const }],
-}),
+      query: () => "tasks/assigned-by-me",
+      providesTags: (result) =>
+        result
+          ? result.data.map(({ id }) => ({ type: "Tasks" as const, id }))
+          : [{ type: "Tasks" as const }],
+    }),
 
-getTasksAssignedToUser: build.query<ApiResponse<Task[]>, void>({
-  query: () => "tasks/assigned-to-me",
-  providesTags: (result) =>
-    result
-      ? result.data.map(({ id }) => ({ type: "Tasks" as const, id }))
-      : [{ type: "Tasks" as const }],
-}),
-getAllTasksFromProject: build.query<ApiResponse<Task[]>, string>({
-  query: (projectId) => `tasks/${projectId}`,
-  providesTags: (result) =>
-    result?.data
-      ? result.data.map((task) => ({ type: "Tasks" as const, id: task.id }))
-      : [{ type: "Tasks" }],
-}),
+    getTasksAssignedToUser: build.query<ApiResponse<Task[]>, void>({
+      query: () => "tasks/assigned-to-me",
+      providesTags: (result) =>
+        result
+          ? result.data.map(({ id }) => ({ type: "Tasks" as const, id }))
+          : [{ type: "Tasks" as const }],
+    }),
+    getAllTasksFromProject: build.query<ApiResponse<Task[]>, string>({
+      query: (projectId) => `tasks/${projectId}`,
+      providesTags: (result) =>
+        result?.data
+          ? result.data.map((task) => ({ type: "Tasks" as const, id: task.id }))
+          : [{ type: "Tasks" }],
+    }),
+    getTaskById: build.query<ApiResponse<Task>, string>({
+      query: (id) => `tasks/${id}`,
+      providesTags: (result) =>
+        result ? [{ type: "Tasks", id: result.data.id }] : [],
+    }),
 
 
 
     createTask: build.mutation<ApiResponse<Task>, Partial<Task>>({
-  query: (task) => ({
-    url: `tasks/create`, // ✅ no /:projectId in the URL
-    method: "POST",
-    body: task, // ✅ projectId will be read from the body
-  }),
-  invalidatesTags: ["Tasks"],
-}),
+      query: (task) => ({
+        url: `tasks/create`, 
+        method: "POST",
+        body: task, 
+      }),
+      invalidatesTags: ["Tasks"],
+    }),
 
     updateTaskInfo: build.mutation<Task, Partial<Task>>({
       query: (data) => ({
@@ -294,29 +316,46 @@ getAllTasksFromProject: build.query<ApiResponse<Task[]>, string>({
         { type: "Tasks", id },
       ],
     }),
-    assignUsersToTask: build.mutation<ApiResponse<TaskAssignment[]>, { taskId: string; userIds: string[] }>({
-  query: ({ taskId, userIds }) => ({
-    url: "tasks/add-users",
-    method: "POST",
-    body: { taskId, userIds },
-  }),
-  invalidatesTags: (result, error, { taskId }) => [
-    { type: "Tasks", id: taskId },
-    "Users",
-  ],
-}),
 
-assignTeamsToProjects: build.mutation<ApiResponse<ProjectTeams[]>, {projectId: string; teamIds: string[]}>({
-  query: ({projectId, teamIds}) => ({
-    url:"project-team/assign",
-    method: "POST",
-    body: {projectId, teamIds}
-  }),
-  invalidatesTags:(result, error, {projectId}) => [
-    {type: "Projects", id:projectId},
-    "Teams",
-  ]
-  
+    deleteTask: build.mutation<ApiResponse<null>, { id: string }>({
+      query: ({ id }) => ({
+        url: `tasks/delete/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Tasks", id },
+      ],
+    }),
+    assignUsersToTask: build.mutation<ApiResponse<TaskAssignment[]>, { taskId: string; userIds: string[] }>({
+      query: ({ taskId, userIds }) => ({
+        url: "tasks/add-users",
+        method: "POST",
+        body: { taskId, userIds },
+      }),
+      invalidatesTags: (result, error, { taskId }) => [
+        { type: "Tasks", id: taskId },
+        "Users",
+      ],
+    }),
+
+    assignTeamsToProjects: build.mutation<ApiResponse<ProjectTeams[]>, { projectId: string; teamIds: string[] }>({
+      query: ({ projectId, teamIds }) => ({
+        url: "project-team/assign",
+        method: "POST",
+        body: { projectId, teamIds }
+      }),
+      invalidatesTags: (result, error, { projectId }) => [
+        { type: "Projects", id: projectId },
+        "Teams",
+      ]
+
+    }),
+    getUserTeam: build.query<ApiResponse<Team>, void>({
+  query: () => `teams/me`,
+  providesTags: (result) =>
+    result?.data
+      ? [{ type: "Teams" as const, id: result.data.id }]
+      : [{ type: "Teams" }],
 }),
 
 
@@ -350,9 +389,12 @@ export const {
   useGetProjectByIdQuery,
   useCreateProjectMutation,
   useDeleteProjectMutation,
+  useUpdateProjectMutation,
   useGetTasksAssignedByUserQuery,
   useGetTasksAssignedToUserQuery,
   useGetAllTasksFromProjectQuery,
+  useGetTaskByIdQuery,
+  useDeleteTaskMutation,
   useCreateTaskMutation,
   useUpdateTaskInfoMutation,
   useAssignUsersToTaskMutation,
@@ -360,4 +402,5 @@ export const {
   useGetUsersQuery,
   useGetTeamsQuery,
   useAssignTeamsToProjectsMutation,
+  useGetUserTeamQuery,
 } = api;

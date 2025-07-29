@@ -189,8 +189,8 @@ const updateProject = asyncHandler(
       throw new ApiError(403, "Forbidden");
     }
     const { id } = req.body;
-    const { name, description, startDate, endDate, status } = req.body;
-    if (!name && !description && !startDate && !endDate && !status) {
+    const { name, description, startDate, endDate, status, teamIds } = req.body;
+    if (!name && !description && !startDate && !endDate && !status && !teamIds) {
       throw new ApiError(400, "No fields to update");
     }
     const data: Prisma.ProjectUpdateInput = {};
@@ -204,6 +204,23 @@ const updateProject = asyncHandler(
       where: { id },
       data: data
     });
+
+    if (teamIds && teamIds.length > 0) {
+
+      const deleted = await prisma.projectTeam.deleteMany({
+        where: { projectId: id },
+      });
+      console.log("Deleted project teams:", deleted);
+
+      const projectTeams = teamIds.map((teamId: string) => ({
+        projectId: id,
+        teamId,
+      }));
+
+      await prisma.projectTeam.createMany({
+        data: projectTeams,
+      });
+    }
 
     if (!updatedProject) {
       throw new ApiError(404, "Project not found");
@@ -221,7 +238,8 @@ const getProjectById = asyncHandler(
     const project = await prisma.project.findUnique({
       where: { id },
       include:{
-        manager: true
+        manager: true,
+        teams: true,
       }
     });
 

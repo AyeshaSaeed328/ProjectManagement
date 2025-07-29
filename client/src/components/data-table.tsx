@@ -31,7 +31,87 @@ interface DataTableProps<TData> {
 
 import { ArrowUpDown } from "lucide-react"
 import { useState } from "react";
-import { Task } from "@/state/api";
+import { Task, User } from "@/state/api";
+import Image from "next/image";
+
+export const userColumns: ColumnDef<User>[] = [
+  {
+     
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
+  accessorKey: "profilePicture",
+  header: "Avatar",
+  cell: ({ row }) => {
+    const src = row.getValue("profilePicture") as string | undefined;
+    const fallback = "/default-avatar.png"; // place this in your public folder
+
+    return (
+      <Image
+        src={src && src.trim() !== "" ? src : fallback}
+        alt="User Avatar"
+        className="w-10 h-10 rounded-full object-cover"
+        width={40}
+        height={40}
+      />
+    );
+  },
+  enableSorting: false,
+  enableHiding: false,
+},
+
+
+  {
+    accessorKey: "username",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Username
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>)
+    },
+    cell: ({ row }) => <div className="truncate max-w-[200px]">{row.getValue("username")}</div>,
+  },
+  {
+    accessorKey: "email",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Email
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>)
+    },
+    cell: ({ row }) => <div>{row.getValue("email")}</div>,
+  },
+  
+  
+] 
+
 
 export const taskColumns: ColumnDef<Task>[] = [
 

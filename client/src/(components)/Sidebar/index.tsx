@@ -33,7 +33,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog"
-import { useDeleteProjectMutation } from '@/state/api';
+import { useDeleteProjectMutation, useGetProjectByIdQuery } from '@/state/api';
 import { toast } from 'sonner';
 
 
@@ -43,22 +43,28 @@ const Sidebar = ({ projects }: { projects: Project[] }) => {
   const [showProjects, setShowProjects] = useState(true);
   const [showPriority, setShowPriority] = useState(true);
   const [isModalNewProjectOpen, setIsModalNewProjectOpen] = useState(false);
-    const [deleteProject, {isLoading}] = useDeleteProjectMutation();
+  const [projectIdToEdit, setProjectIdToEdit] = useState<string | null>(null);
+  const isEditing = Boolean(projectIdToEdit)
+  const { data: projectData, isLoading: isGetProjectLoading } = useGetProjectByIdQuery(projectIdToEdit!, {
+    skip: !projectIdToEdit,
+  });
+  const [deleteProject, { isLoading: isDeleteProjectLoading }] = useDeleteProjectMutation();
 
 
   const handleDelete = async (id: string) => {
-  try {
-    await deleteProject({ id }).unwrap(); // <-- this is important!
-    toast.success("Project deleted");
-  } catch (error) {
-    toast.error("Could not delete project");
-    // console.error("Delete failed", error);
-  }
-};
+    try {
+      await deleteProject({ id }).unwrap();
+      toast.success("Project deleted");
+    } catch (error) {
+      toast.error("Could not delete project");
+      // console.error("Delete failed", error);
+    }
+  };
 
-const handleEdit = (id:string)=>{
-  console.log("Edit")
-}
+  const handleEdit = (id: string) => {
+    setProjectIdToEdit(id); // this will cause useGetProjectByIdQuery to fetch data
+    setIsModalNewProjectOpen(true); // this opens the modal
+  };
 
 
   // Redux hooks
@@ -74,7 +80,11 @@ const handleEdit = (id:string)=>{
       <div className="flex h-[100%] w-full flex-col justify-start">
         <ModalNewProject
           isOpen={isModalNewProjectOpen}
-          onClose={() => setIsModalNewProjectOpen(false)}
+          onClose={() => {
+            setIsModalNewProjectOpen(false);
+            setProjectIdToEdit(null);
+          }}
+          initialData={isEditing ? projectData?.data : undefined}
         />
         <div className="z-50 flex min-h-[56px] w-85 items-center justify-between px-6 pt-3">
           <div className="text-xl font-bold text-gray-800 dark:text-white">
@@ -123,7 +133,7 @@ const handleEdit = (id:string)=>{
             <NavItem icon={Home} label="Home" href="/dashboard" />
             <NavItem icon={Briefcase} label="Timeline" href="/dashboard/timeline" />
             <NavItem icon={User} label="Users" href="/dashboard/users" />
-            <NavItem icon={Users} label="Teams" href="/dashboard/teams" />
+            <NavItem icon={Users} label="My Team" href="/dashboard/myTeam" />
           </nav>
         </div>
 
@@ -133,106 +143,127 @@ const handleEdit = (id:string)=>{
           isOpen={showProjects}
           onToggle={() => setShowProjects(!showProjects)}
           rightElement={
-            <button
-              onClick={() => setIsModalNewProjectOpen(true)}
-              className="hover:bg-gray-100 dark:hover:bg-gray-700 rounded p-1"
-              title="Create new project"
-            >
-              <Plus className="h-4 w-4 text-gray-600 dark:text-gray-300" />
-            </button>
+            <div className="relative group inline-block">
+              <button
+                onClick={() => setIsModalNewProjectOpen(true)}
+                className="hover:bg-gray-100 dark:hover:bg-gray-700 rounded p-1"
+
+              >
+                <Plus className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+              </button>
+              <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                Create Project
+              </span>
+            </div>
           }
         />
 
         {showProjects && (
-  <div className="ml-4 space-y-2 mb-6 border-b-[1.5px] gap-5 border-gray-200 px-8 py-4">
-    {projects.map((project) => (
-      <div
-        key={project.id}
-        className="flex items-center justify-between"
-      >
-        <NavItem
-          icon={Folder}
-          label={project.name}
-          href={`/dashboard/projects/${project.id}`}
-        />
-
-        <div className="flex items-center justify-end gap-3">
-          {/* Edit button */}
-          <button onClick={() => handleEdit(project.id)}>
-            <Pencil
-              size={12}
-              className="cursor-pointer hover:text-purple-700 dark:text-white dark:hover:text-purple-700"
-            />
-          </button>
-
-          {/* Delete dialog */}
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <button aria-label="Delete Project">
-                <Trash2
-                  size={12}
-                  className="cursor-pointer hover:text-purple-700 dark:text-white dark:hover:text-purple-700"
+          <div className="ml-4 space-y-2 mb-6 border-b-[1.5px] gap-5 border-gray-200 px-8 py-4">
+            {projects.map((project) => (
+              <div
+                key={project.id}
+                className="flex items-center justify-between"
+              >
+                <NavItem
+                  icon={Folder}
+                  label={project.name}
+                  href={`/dashboard/projects/${project.id}`}
                 />
-              </button>
-            </AlertDialogTrigger>
 
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete <strong>{project.name}</strong> and all its related data.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
 
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => handleDelete(project.id)}>
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
+
+              <div className='flex gap-2'>
+                <div className="relative group inline-block">
+                  <button onClick={() => handleEdit(project.id)} className="relative z-10">
+                    <Pencil
+                      size={12}
+                      aria-label="Edit Task"
+                      className="cursor-pointer hover:text-purple-700 dark:hover:text-purple-700"
+                    />
+                  </button>
+                  <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                    Edit Task
+                  </span>
+                </div>
+
+
+                {/* Delete dialog */}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <div className="relative group inline-block">
+                  <button className="relative z-10">
+                    <Trash2
+                      size={12}
+                      aria-label="Delete Task"
+                      className="cursor-pointer hover:text-purple-700 dark:hover:text-purple-700"
+                    />
+                  </button>
+                  <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                    Delete Task
+                  </span>
+                </div>
+                  </AlertDialogTrigger>
+
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete <strong>{project.name}</strong> and all its related data.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDelete(project.id)}>
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+             </div>
+        ))}
       </div>
-    ))}
-  </div>
-)}
-
-
-        {/* Priorities Section */}
-        <SectionHeader
-          title="Priorities"
-          isOpen={showPriority}
-          onToggle={() => setShowPriority(!showPriority)}
-        />
-
-        {showPriority && (
-          <div className="ml-4 space-y-2 border-b-[1.5px] gap-5 border-gray-200 px-8 py-4">
-            <NavItem
-              icon={AlertCircle}
-              label="Urgent"
-              href="/priority/urgent"
-            />
-            <NavItem
-              icon={ShieldAlert}
-              label="High"
-              href="/priority/high"
-            />
-            <NavItem
-              icon={AlertTriangle}
-              label="Medium"
-              href="/priority/medium"
-            />
-            <NavItem icon={AlertOctagon} label="Low" href="/priority/low" />
-            <NavItem
-              icon={Layers3}
-              label="Backlog"
-              href="/priority/backlog"
-            />
-          </div>
+      
         )}
-      </div>
-    </aside>
+        
+
+
+      {/* Priorities Section */}
+      <SectionHeader
+        title="Priorities"
+        isOpen={showPriority}
+        onToggle={() => setShowPriority(!showPriority)}
+      />
+
+      {showPriority && (
+        <div className="ml-4 space-y-2 border-b-[1.5px] gap-5 border-gray-200 px-8 py-4">
+          <NavItem
+            icon={AlertCircle}
+            label="Urgent"
+            href="/priority/urgent"
+          />
+          <NavItem
+            icon={ShieldAlert}
+            label="High"
+            href="/priority/high"
+          />
+          <NavItem
+            icon={AlertTriangle}
+            label="Medium"
+            href="/priority/medium"
+          />
+          <NavItem icon={AlertOctagon} label="Low" href="/priority/low" />
+          <NavItem
+            icon={Layers3}
+            label="Backlog"
+            href="/priority/backlog"
+          />
+        </div>
+      )}
+    </div>
+    </aside >
   );
 };
 

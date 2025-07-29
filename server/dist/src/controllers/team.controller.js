@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUserTeams = exports.updateTeam = exports.getAllTeams = exports.createTeam = void 0;
+exports.getUserTeam = exports.updateTeam = exports.getAllTeams = exports.createTeam = void 0;
 const asyncHandler_1 = __importDefault(require("../utils/asyncHandler"));
 const ApiError_1 = require("../utils/ApiError");
 const ApiResponse_1 = require("../utils/ApiResponse");
@@ -46,7 +46,6 @@ const getUserTeams = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0,
     });
     return res.status(200).json(new ApiResponse_1.ApiResponse(200, teams, "Teams retrieved successfully"));
 }));
-exports.getUserTeams = getUserTeams;
 const createTeam = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { teamName, teamLeadId } = req.body;
     const newTeam = yield prisma.team.create({
@@ -88,3 +87,34 @@ const updateTeam = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, v
     return res.status(200).json(new ApiResponse_1.ApiResponse(200, updatedTeam, "Team updated successfully"));
 }));
 exports.updateTeam = updateTeam;
+const getUserTeam = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+    if (!userId) {
+        throw new ApiError_1.ApiError(401, "Unauthorized");
+    }
+    const team = yield prisma.team.findFirst({
+        where: {
+            members: {
+                some: {
+                    id: userId
+                }
+            }
+        },
+        include: {
+            members: true,
+            projectTeams: true,
+            teamLead: {
+                select: {
+                    username: true,
+                    profilePicture: true
+                }
+            },
+        }
+    });
+    if (!team) {
+        throw new ApiError_1.ApiError(404, "Team not found");
+    }
+    return res.status(200).json(new ApiResponse_1.ApiResponse(200, team, "Team retrieved successfully"));
+}));
+exports.getUserTeam = getUserTeam;

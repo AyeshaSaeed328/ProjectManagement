@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getTasksByProjectId = exports.updateTaskInfo = exports.addUsersToTask = exports.createTask = exports.getTasksAssignedToUser = exports.getTasksAssignedByUser = void 0;
+exports.deleteTask = exports.getTaskById = exports.getTasksByProjectId = exports.updateTaskInfo = exports.addUsersToTask = exports.createTask = exports.getTasksAssignedToUser = exports.getTasksAssignedByUser = void 0;
 const asyncHandler_1 = __importDefault(require("../utils/asyncHandler"));
 const ApiError_1 = require("../utils/ApiError");
 const ApiResponse_1 = require("../utils/ApiResponse");
@@ -175,31 +175,39 @@ const createTask = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, v
 exports.createTask = createTask;
 const addUsersToTask = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { taskId, userIds } = req.body;
-    // ✅ Validate
-    if (!taskId || !Array.isArray(userIds) || userIds.length === 0) {
-        throw new ApiError_1.ApiError(400, "Missing required fields: taskId and at least one userId");
+    if (!taskId || !Array.isArray(userIds)) {
+        throw new ApiError_1.ApiError(400, "Missing required fields: taskId and userIds array");
     }
-    // ✅ Get existing assignments to avoid duplicates
-    const existingAssignments = yield prisma.taskAssignment.findMany({
-        where: {
-            taskId,
-            userId: { in: userIds },
-        },
+    yield prisma.taskAssignment.deleteMany({
+        where: { taskId },
     });
-    const existingUserIds = new Set(existingAssignments.map((a) => a.userId));
-    // ✅ Filter out already assigned users
-    const newUserIds = userIds.filter((id) => !existingUserIds.has(id));
-    // ✅ Create new assignments in bulk
-    const newAssignments = yield prisma.taskAssignment.createMany({
-        data: newUserIds.map((userId) => ({
-            taskId,
-            userId,
-        })),
-        skipDuplicates: true, // just in case
-    });
-    return res.status(201).json(new ApiResponse_1.ApiResponse(201, newAssignments, `Assigned ${newUserIds.length} user(s) to task successfully`));
+    let createdAssignments;
+    if (userIds.length > 0) {
+        createdAssignments = yield prisma.taskAssignment.createMany({
+            data: userIds.map((userId) => ({
+                taskId,
+                userId,
+            })),
+            skipDuplicates: true,
+        });
+    }
+    return res.status(200).json(new ApiResponse_1.ApiResponse(200, createdAssignments, `Task user assignments updated successfully`));
 }));
 exports.addUsersToTask = addUsersToTask;
+const getTaskById = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    const task = yield prisma.task.findUnique({
+        where: { id },
+        include: {
+            taskAssignments: true
+        },
+    });
+    if (!task) {
+        throw new ApiError_1.ApiError(404, "Task not found");
+    }
+    return res.status(200).json(new ApiResponse_1.ApiResponse(200, task, "Task fetched successfully"));
+}));
+exports.getTaskById = getTaskById;
 const updateTaskInfo = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id, title, description, priority, status, tags, startDate, endDate, points, projectId, authorId, assignedUserIds, } = req.body;
     const updateData = {};
@@ -245,3 +253,24 @@ const updateTaskInfo = (0, asyncHandler_1.default)((req, res) => __awaiter(void 
     return res.status(200).json(new ApiResponse_1.ApiResponse(200, task, "Task updated successfully"));
 }));
 exports.updateTaskInfo = updateTaskInfo;
+const deleteTask = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    const user = req.user;
+    if ((user === null || user === void 0 ? void 0 : user.role) !== "MANAGER") {
+        throw new ApiError_1.ApiError(403, "Forbidden");
+    }
+    yield prisma.comment.deleteMany({
+        where: { taskId: id },
+    });
+    yield prisma.attachment.deleteMany({
+        where: { taskId: id },
+    });
+    yield prisma.taskAssignment.deleteMany({
+        where: { taskId: id },
+    });
+    yield prisma.task.delete({
+        where: { id },
+    });
+    return res.status(204).json(new ApiResponse_1.ApiResponse(204, null, "Task deleted successfully"));
+}));
+exports.deleteTask = deleteTask;

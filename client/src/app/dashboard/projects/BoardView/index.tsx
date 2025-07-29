@@ -1,4 +1,4 @@
-import { useGetTasksAssignedByUserQuery, useGetTasksAssignedToUserQuery, useUpdateTaskInfoMutation, useGetAllTasksFromProjectQuery } from "@/state/api";
+import { useDeleteTaskMutation, useUpdateTaskInfoMutation, Priority } from "@/state/api";
 import React from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -7,12 +7,17 @@ import { EllipsisVertical, MessageSquareMore, Plus } from "lucide-react";
 import { format } from "date-fns";
 import Image from "next/image";
 import { Status } from "@/state/api";
-import { Flag } from "lucide-react";
+import { Flag, Pencil, Trash2 } from "lucide-react";
+import ModalNewTask from "@/(components)/ModalNewTask";
+import { toast } from "sonner";
+
 
 type BoardProps = {
   setIsModalNewTaskOpen: (isOpen: boolean) => void;
   tasks: TaskType[]
 };
+
+
 
 const statusLabels: Record<Status, string> = {
   [Status.TODO]: "To Do",
@@ -26,10 +31,10 @@ const taskStatus: Status[] = Object.keys(statusLabels) as Status[];
 
 const BoardView = ({ setIsModalNewTaskOpen, tasks }: BoardProps) => {
   console.log("tasks", tasks)
-  
-  
-  const [updateTaskInfo] = useUpdateTaskInfoMutation();
 
+
+  const [updateTaskInfo] = useUpdateTaskInfoMutation();
+  const [selectedTask, setSelectedTask] = React.useState<TaskType | null>(null);
   const moveTask = (taskId: string, toStatus: Status) => {
     updateTaskInfo({ id: taskId, status: toStatus });
   };
@@ -38,25 +43,44 @@ const BoardView = ({ setIsModalNewTaskOpen, tasks }: BoardProps) => {
 
   return (
     <div className="flex flex-col p-4 gap-4">
-  <div className="flex justify-end">
-    
-  </div>
+      <div className="flex justify-end">
 
-  {/* Task board */}
-  <DndProvider backend={HTML5Backend}>
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-      {taskStatus.map((status: Status) => (
-        <TaskColumn
-          key={status}
-          status={status}
-          tasks={tasks || []}
-          moveTask={moveTask}
-          setIsModalNewTaskOpen={setIsModalNewTaskOpen}
+      </div>
+
+      {/* Task board */}
+      <DndProvider backend={HTML5Backend}>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {taskStatus.map((status: Status) => (
+            <TaskColumn
+              key={status}
+              status={status}
+              tasks={tasks || []}
+              moveTask={moveTask}
+              setIsModalNewTaskOpen={setIsModalNewTaskOpen}
+              setSelectedTask={setSelectedTask}
+            />
+          ))}
+        </div>
+      </DndProvider>
+      {selectedTask && (
+        <ModalNewTask
+          isOpen={true}
+          onClose={() => setSelectedTask(null)}
+          initialData={{
+            id: selectedTask.id,
+            title: selectedTask.title,
+            description: selectedTask.description,
+            status: selectedTask.status ?? Status.TODO,
+            priority: selectedTask.priority ?? Priority.MEDIUM,
+            tags: selectedTask.tags,
+            startDate: selectedTask.startDate,
+            endDate: selectedTask.endDate,
+            assignedUserIds: selectedTask.taskAssignments?.map((a) => a.user.id) || [],
+          }}
         />
-      ))}
+      )}
+
     </div>
-  </DndProvider>
-</div>
 
 
   );
@@ -67,6 +91,7 @@ type TaskColumnProps = {
   tasks: TaskType[];
   moveTask: (taskId: string, toStatus: Status) => void;
   setIsModalNewTaskOpen: (isOpen: boolean) => void;
+  setSelectedTask: (task: TaskType | null) => void;
 };
 
 const TaskColumn = ({
@@ -74,6 +99,7 @@ const TaskColumn = ({
   tasks,
   moveTask,
   setIsModalNewTaskOpen,
+  setSelectedTask,
 }: TaskColumnProps) => {
   const [{ isOver }, drop] = useDrop(() => ({
     accept: "task",
@@ -85,7 +111,7 @@ const TaskColumn = ({
 
   const tasksCount = tasks.filter((task) => task.status === status).length;
 
-  
+
 
   return (
     <div
@@ -123,21 +149,23 @@ const TaskColumn = ({
         </div>
       </div>
 
+
       {tasks
         .filter((task) => task.status === status)
         .map((task) => (
-          <Task key={task.id} task={task} />
+          <Task key={task.id} task={task} onEdit={() => setSelectedTask(task)} />
         ))}
-        
+
     </div>
   );
 };
 
 type TaskProps = {
   task: TaskType;
+  onEdit: () => void;
 };
 
-const Task = ({ task }: TaskProps) => {
+const Task = ({ task, onEdit }: TaskProps) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: "task",
     item: { id: task.id },
@@ -145,6 +173,18 @@ const Task = ({ task }: TaskProps) => {
       isDragging: !!monitor.isDragging(),
     }),
   }));
+
+  const [deleteTask, { isLoading: isDeleteLoading }] = useDeleteTaskMutation()
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteTask({ id }).unwrap();
+      toast.success("Project deleted");
+    } catch (error) {
+      toast.error("Could not delete project");
+      // console.error("Delete failed", error);
+    }
+  };
 
   const taskTagsSplit = task.tags ? task.tags.split(",") : [];
 
@@ -160,14 +200,14 @@ const Task = ({ task }: TaskProps) => {
   const PriorityTag = ({ priority }: { priority: TaskType["priority"] }) => (
     <div
       className={`rounded-full px-2 py-1 text-xs font-semibold ${priority === "CRITICAL"
-          ? " text-red-700"
-          : priority === "HIGH"
-            ? " text-yellow-700"
-            : priority === "MEDIUM"
-              ? " text-green-700"
-              : priority === "LOW"
-                ? " text-blue-700"
-                : " text-gray-700"
+        ? " text-red-700"
+        : priority === "HIGH"
+          ? " text-yellow-700"
+          : priority === "MEDIUM"
+            ? " text-green-700"
+            : priority === "LOW"
+              ? " text-blue-700"
+              : " text-gray-700"
         }`}
     >
       <div title={priority}>
@@ -226,6 +266,7 @@ const Task = ({ task }: TaskProps) => {
     )} */}
               {task.priority && <PriorityTag priority={task.priority} />}
 
+
             </div>
 
             <div className="text-xs text-gray-500 dark:text-neutral-500 mt-1">
@@ -268,13 +309,54 @@ const Task = ({ task }: TaskProps) => {
               />
             )}
           </div>
-          <div className="flex items-center text-gray-500 dark:text-neutral-500">
-            <MessageSquareMore size={20} />
-            <span className="ml-1 text-sm dark:text-neutral-400">
-              {numberOfComments}
-            </span>
+          <div className="flex items-center justify-end  text-gray-500 dark:text-neutral-500 gap-2">
+            <div className="flex items-center space-x-3">
+              {/* 💬 Comment Icon + Count */}
+              <div className="relative group inline-flex items-center">
+                <MessageSquareMore
+                  size={16}
+                  aria-label="Comments"
+                  className="cursor-pointer hover:text-purple-700 dark:hover:text-purple-700"
+                />
+                <span className="ml-1 text-sm dark:text-neutral-400">
+                  {numberOfComments}
+                </span>
+                <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                  View Comments
+                </span>
+              </div>
+
+              {/* ✏️ Edit Button */}
+              <div className="relative group inline-block">
+                <button onClick={onEdit} className="relative z-10">
+                  <Pencil
+                    size={16}
+                    aria-label="Edit Task"
+                    className="cursor-pointer hover:text-purple-700 dark:hover:text-purple-700"
+                  />
+                </button>
+                <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                  Edit Task
+                </span>
+              </div>
+
+              <div className="relative group inline-block">
+                <button onClick={() => handleDelete(task.id)} className="relative z-10">
+                  <Trash2
+                    size={16}
+                    aria-label="Delete Task"
+                    className="cursor-pointer hover:text-purple-700 dark:hover:text-purple-700"
+                  />
+                </button>
+                <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                  Delete Task
+                </span>
+              </div>
+            </div>
+
           </div>
         </div>
+
       </div>
     </div>
   );

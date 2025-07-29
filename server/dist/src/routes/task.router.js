@@ -10,4 +10,6 @@ router.post("/create", auth_middleware_1.verifyJWT, task_controller_1.createTask
 router.post("/add-users", auth_middleware_1.verifyJWT, task_controller_1.addUsersToTask);
 router.patch("/update", auth_middleware_1.verifyJWT, task_controller_1.updateTaskInfo);
 router.get("/:projectId", auth_middleware_1.verifyJWT, task_controller_1.getTasksByProjectId);
+router.get("/:id", auth_middleware_1.verifyJWT, task_controller_1.getTaskById);
+router.delete("/:id", auth_middleware_1.verifyJWT, task_controller_1.deleteTask);
 exports.default = router;

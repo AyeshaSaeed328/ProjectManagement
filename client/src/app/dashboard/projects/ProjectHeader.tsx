@@ -11,6 +11,7 @@ import {
 import React, { useState } from "react";
 import ModalNewProject from "./ModalNewProject";
 import { Project } from "@/state/api";
+import Image from "next/image";
 
 type Props = {
   activeTab: string;
@@ -41,10 +42,12 @@ const ProjectHeader = ({ activeTab, setActiveTab, project }: Props) => {
         />
       </div>
       <div className="flex items-center space-x-3 mt-2 pb-6 lg:pb-8 px-4">
-        <img
-          src={project?.manager?.profilePicture ?? "/default-avatar.png"}
+        <Image          
+        src={project?.manager?.profilePicture ?? "/default-avatar.png"}
           alt="Manager Profile"
           className="w-10 h-10 rounded-full object-cover border"
+          width={40}
+          height={40}
         />
         <div>
           <p className="text-sm text-gray-600 dark:text-gray-400">
