@@ -7,6 +7,11 @@ import morgan from 'morgan';
 import session from "express-session";
 import passport from 'passport';
 import cookieParser from 'cookie-parser';
+import { Server } from "socket.io";
+import { createServer } from 'http';
+import { ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData } from './utils/types';
+import { initializeSocketIO } from './socket';
+
 
 // routes import
 import projectRoutes from "./routes/project.router"
@@ -18,6 +23,26 @@ import projectTeamRoutes from "./routes/project-team.router"
 
 dotenv.config();
 const app = express();
+
+const httpServer = createServer(app);
+
+const io = new Server<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketData
+>(httpServer, {
+  pingTimeout: 60000,
+  cors: {
+    origin: "*",
+    credentials: true,
+  },
+});
+
+app.set("io", io);
+
+
+app.set("io", io);
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(helmet());
@@ -29,6 +54,9 @@ app.use(cors({
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
 }));
+
+
+
 
 app.use(
   session({
@@ -53,7 +81,12 @@ app.use("/api/v1/teams", teamRoutes);
 app.use("/api/v1/tasks", taskRoutes);
 app.use("/api/v1/project-team", projectTeamRoutes);
 
+initializeSocketIO(io);
+
 const port = process.env.PORT || 4000;
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+httpServer.listen(port, () => {
+  console.log(`Server + Socket.IO running on port ${port}`);
 });
+
+
+export { httpServer };

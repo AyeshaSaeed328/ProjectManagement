@@ -1,298 +1,253 @@
-"use client";
 
-import {
-  ChatBubble,
-  ChatBubbleAction,
-  ChatBubbleAvatar,
-  ChatBubbleMessage,
-} from "@/components/ui/chat/chat-bubble";
-import { ChatInput } from "@/components/ui/chat/chat-input";
-import { ChatMessageList } from "@/components/ui/chat/chat-message-list";
-import { Button } from "@/components/ui/button";
-import {
-  CopyIcon,
-  CornerDownLeft,
-  Mic,
-  Paperclip,
-  RefreshCcw,
-  Send,
-  Volume2,
-} from "lucide-react";
-import { useChat } from "@ai-sdk/react"
-import { useEffect, useRef, useState } from "react";
-import { GitHubLogoIcon } from "@radix-ui/react-icons";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import CodeDisplayBlock from "@/components/code-display-block";
+// // components/Chat.tsx or wherever you want to connect
+// "use client";
+// import { useEffect, useRef, useState } from "react";
+// import { getSocket } from "@/lib/utils";
 
-const ChatAiIcons = [
-  {
-    icon: CopyIcon,
-    label: "Copy",
-  },
-  {
-    icon: RefreshCcw,
-    label: "Refresh",
-  },
-  {
-    icon: Volume2,
-    label: "Volume",
-  },
-];
+// const Chat = () => {
+//   const [messages, setMessages] = useState<string[]>([]);
+//   const socketRef = useRef<any>(null);
 
-export default function Home() {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const {
-    messages,
-    setMessages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
-    reload,
-  } = useChat({
-    onResponse(response) {
-      if (response) {
-        console.log(response);
-        setIsGenerating(false);
-      }
-    },
-    onError(error) {
-      if (error) {
-        setIsGenerating(false);
-      }
-    },
-  });
+//   useEffect(() => {
 
-  const messagesRef = useRef<HTMLDivElement>(null);
-  const formRef = useRef<HTMLFormElement>(null);
+//     if (!token) return;
 
-  useEffect(() => {
-    if (messagesRef.current) {
-      messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
-    }
-  }, [messages]);
+//     const socket = getSocket(token);
+//     socketRef.current = socket;
 
-  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsGenerating(true);
-    handleSubmit(e);
-  };
+//     socket.on("connect", () => {
+//       console.log("Socket connected:", socket.id);
+//     });
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      if (isGenerating || isLoading || !input) return;
-      setIsGenerating(true);
-      onSubmit(e as unknown as React.FormEvent<HTMLFormElement>);
-    }
-  };
+//     socket.on("newMessage", (msg: string) => {
+//       setMessages((prev) => [...prev, msg]);
+//     });
 
-  const handleActionClick = async (action: string, messageIndex: number) => {
-    console.log("Action clicked:", action, "Message index:", messageIndex);
-    if (action === "Refresh") {
-      setIsGenerating(true);
-      try {
-        await reload();
-      } catch (error) {
-        console.error("Error reloading:", error);
-      } finally {
-        setIsGenerating(false);
-      }
-    }
+//     return () => {
+//       socket.disconnect();
+//     };
+//   }, []);
 
-    if (action === "Copy") {
-      const message = messages[messageIndex];
-      if (message && message.role === "assistant") {
-        navigator.clipboard.writeText(message.content);
-      }
-    }
-  };
+//   return (
+//     <div>
+//       <h2>Messages:</h2>
+//       {messages.map((m, i) => (
+//         <div key={i}>{m}</div>
+//       ))}
+//     </div>
+//   );
+// };
 
-  return (
-    <main className="flex h-screen w-full max-w-3xl flex-col items-center mx-auto">
-      <div className="flex-1 w-full overflow-y-auto py-6">
-        <ChatMessageList>
-          {/* Initial Message */}
-          {messages.length === 0 && (
-            <div className="w-full bg-background shadow-sm border rounded-lg p-8 flex flex-col gap-2">
-              <h1 className="font-bold">Welcome to this example app.</h1>
-              <p className="text-muted-foreground text-sm">
-                This is a simple Next.JS example application created using{" "}
-                <a
-                  href="https://github.com/jakobhoeg/shadcn-chat"
-                  className="font-bold inline-flex flex-1 justify-center gap-1 leading-4 hover:underline"
-                >
-                  shadcn-chat
-                  <svg
-                    aria-hidden="true"
-                    height="7"
-                    viewBox="0 0 6 6"
-                    width="7"
-                    className="opacity-70"
-                  >
-                    <path
-                      d="M1.25215 5.54731L0.622742 4.9179L3.78169 1.75597H1.3834L1.38936 0.890915H5.27615V4.78069H4.40513L4.41109 2.38538L1.25215 5.54731Z"
-                      fill="currentColor"
-                    ></path>
-                  </svg>
-                </a>{" "}
-                components. It uses{" "}
-                <a
-                  href="https://sdk.vercel.ai/"
-                  className="font-bold inline-flex flex-1 justify-center gap-1 leading-4 hover:underline"
-                >
-                  Vercel AI SDK
-                  <svg
-                    aria-hidden="true"
-                    height="7"
-                    viewBox="0 0 6 6"
-                    width="7"
-                    className="opacity-70"
-                  >
-                    <path
-                      d="M1.25215 5.54731L0.622742 4.9179L3.78169 1.75597H1.3834L1.38936 0.890915H5.27615V4.78069H4.40513L4.41109 2.38538L1.25215 5.54731Z"
-                      fill="currentColor"
-                    ></path>
-                  </svg>
-                </a>{" "}
-                for the AI integration. Build chat interfaces like this at
-                lightspeed with shadcn-chat.
-              </p>
-              <p className="text-muted-foreground text-sm">
-                Make sure to also checkout the shadcn-chat support component at
-                the bottom right corner.
-              </p>
-            </div>
-          )}
+// export default Chat;
 
-          {/* Messages */}
-          {messages &&
-            messages.map((message, index) => (
-              <ChatBubble
-                key={index}
-                variant={message.role == "user" ? "sent" : "received"}
-              >
-                <ChatBubbleAvatar
-                  src=""
-                  fallback={message.role == "user" ? "👨🏽" : "🤖"}
-                />
-                <ChatBubbleMessage>
-                  {message.content
-                    .split("```")
-                    .map((part: string, index: number) => {
-                      if (index % 2 === 0) {
-                        return (
-                          <Markdown key={index} remarkPlugins={[remarkGfm]}>
-                            {part}
-                          </Markdown>
-                        );
-                      } else {
-                        return (
-                          <pre className="whitespace-pre-wrap pt-2" key={index}>
-                            <CodeDisplayBlock code={part} lang="" />
-                          </pre>
-                        );
-                      }
-                    })}
 
-                  {message.role === "assistant" &&
-                    messages.length - 1 === index && (
-                      <div className="flex items-center mt-1.5 gap-1">
-                        {!isGenerating && (
-                          <>
-                            {ChatAiIcons.map((icon, iconIndex) => {
-                              const Icon = icon.icon;
-                              return (
-                                <ChatBubbleAction
-                                  variant="outline"
-                                  className="size-5"
-                                  key={iconIndex}
-                                  icon={<Icon className="size-3" />}
-                                  onClick={() =>
-                                    handleActionClick(icon.label, index)
-                                  }
-                                />
-                              );
-                            })}
-                          </>
-                        )}
-                      </div>
-                    )}
-                </ChatBubbleMessage>
-              </ChatBubble>
-            ))}
 
-          {/* Loading */}
-          {isGenerating && (
-            <ChatBubble variant="received">
-              <ChatBubbleAvatar src="" fallback="🤖" />
-              <ChatBubbleMessage isLoading />
-            </ChatBubble>
-          )}
-        </ChatMessageList>
-      </div>
 
-      {/* Form and Footer fixed at the bottom */}
-      <div className="w-full px-4 pb-4">
-        <form
-          ref={formRef}
-          onSubmit={onSubmit}
-          className="relative rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring"
-        >
-          <ChatInput
-            value={input}
-            onKeyDown={onKeyDown}
-            onChange={handleInputChange}
-            placeholder="Type your message here..."
-            className="rounded-lg bg-background border-0 shadow-none focus-visible:ring-0"
-          />
-          <div className="flex items-center p-3 pt-0">
-            <Button variant="ghost" size="icon">
-              <Paperclip className="size-4" />
-              <span className="sr-only">Attach file</span>
-            </Button>
+// // "use client";
 
-            <Button variant="ghost" size="icon">
-              <Mic className="size-4" />
-              <span className="sr-only">Use Microphone</span>
-            </Button>
+// // import {
+// //   ChatBubble,
+// //   ChatBubbleAction,
+// //   ChatBubbleActionWrapper,
+// //   ChatBubbleAvatar,
+// //   ChatBubbleMessage,
+// //   ChatBubbleTimestamp,
+// // } from "@/components/ui/chat/chat-bubble";
+// // import { ChatInput } from "@/components/ui/chat/chat-input";
+// // import { ChatMessageList } from "@/components/ui/chat/chat-message-list";
+// // import { Button } from "@/components/ui/button";
+// // import {
+// //   CopyIcon,
+// //   CornerDownLeft,
+// //   Mic,
+// //   Paperclip,
+// //   RefreshCcw,
+// //   Volume2,
+// // } from "lucide-react";
+// // import { useChat } from "@ai-sdk/react";
+// // import { useEffect, useRef, useState } from "react";
+// // import Markdown from "react-markdown";
+// // import remarkGfm from "remark-gfm";
+// // import CodeDisplayBlock from "@/components/code-display-block";
 
-            <Button
-              disabled={!input || isLoading}
-              type="submit"
-              size="sm"
-              className="ml-auto gap-1.5"
-            >
-              Send Message
-              <CornerDownLeft className="size-3.5" />
-            </Button>
-          </div>
-        </form>
-        <div className="pt-4 flex gap-2 items-center justify-center">
-          <GitHubLogoIcon className="size-4" />
-          <p className="text-xs">
-            <a
-              href="https://github.com/jakobhoeg/shadcn-chat"
-              className="font-bold inline-flex flex-1 justify-center gap-1 leading-4 hover:underline"
-            >
-              shadcn-chat
-              <svg
-                aria-hidden="true"
-                height="7"
-                viewBox="0 0 6 6"
-                width="7"
-                className="opacity-70"
-              >
-                <path
-                  d="M1.25215 5.54731L0.622742 4.9179L3.78169 1.75597H1.3834L1.38936 0.890915H5.27615V4.78069H4.40513L4.41109 2.38538L1.25215 5.54731Z"
-                  fill="currentColor"
-                ></path>
-              </svg>
-            </a>
-          </p>
-        </div>
-      </div>
-    </main>
-  );
-}
+// // const ChatAiIcons = [
+// //   { icon: CopyIcon, label: "Copy" },
+// //   { icon: RefreshCcw, label: "Refresh" },
+// //   { icon: Volume2, label: "Volume" },
+// // ];
+
+// // export default function Home() {
+// //   const [isGenerating, setIsGenerating] = useState(false);
+
+// //   const {
+// //     messages,
+// //     setMessages,
+// //     input,
+// //     handleInputChange,
+// //     handleSubmit,
+// //     isLoading,
+// //     reload,
+// //   } = useChat({
+// //     onResponse: () => setIsGenerating(false),
+// //     onError: () => setIsGenerating(false),
+// //   });
+
+// //   const messagesRef = useRef<HTMLDivElement>(null);
+// //   const formRef = useRef<HTMLFormElement>(null);
+
+// //   useEffect(() => {
+// //     if (messagesRef.current) {
+// //       messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+// //     }
+// //   }, [messages]);
+
+// //   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+// //     e.preventDefault();
+// //     if (!input || isLoading) return;
+// //     setIsGenerating(true);
+// //     handleSubmit(e);
+// //   };
+
+// //   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+// //     if (e.key === "Enter" && !e.shiftKey) {
+// //       e.preventDefault();
+// //       onSubmit(e as unknown as React.FormEvent<HTMLFormElement>);
+// //     }
+// //   };
+
+// //   const handleActionClick = async (action: string, index: number) => {
+// //     const message = messages[index];
+// //     if (!message || message.role !== "assistant") return;
+
+// //     if (action === "Copy") {
+// //       navigator.clipboard.writeText(message.content);
+// //     } else if (action === "Refresh") {
+// //       setIsGenerating(true);
+// //       try {
+// //         await reload();
+// //       } catch (err) {
+// //         console.error("Reload failed:", err);
+// //       } finally {
+// //         setIsGenerating(false);
+// //       }
+// //     } else if (action === "Volume") {
+// //       const utterance = new SpeechSynthesisUtterance(message.content);
+// //       speechSynthesis.speak(utterance);
+// //     }
+// //   };
+
+// //   return (
+// //     <main className="flex h-screen w-full max-w-3xl flex-col items-center mx-auto">
+// //       {/* Chat List */}
+// //       <div
+// //         ref={messagesRef}
+// //         className="flex-1 w-full overflow-y-auto py-6 px-4"
+// //       >
+// //         <ChatMessageList>
+// //           {messages.map((message, index) => {
+// //             const isAssistant = message.role === "assistant";
+// //             const isLastAssistant = isAssistant && index === messages.length - 1;
+
+// //             return (
+// //               <ChatBubble
+// //                 key={index}
+// //                 variant={isAssistant ? "received" : "sent"}
+// //               >
+// //                 <ChatBubbleAvatar
+// //                   fallback={isAssistant ? "🤖" : "👨🏽"}
+// //                 />
+// //                 <div className="flex flex-col gap-0.5">
+// //                   <ChatBubbleMessage
+// //                     variant={isAssistant ? "received" : "sent"}
+// //                   >
+// //                     {message.content.split("```").map((part, i) =>
+// //                       i % 2 === 0 ? (
+// //                         <Markdown key={i} remarkPlugins={[remarkGfm]}>
+// //                           {part}
+// //                         </Markdown>
+// //                       ) : (
+// //                         <pre className="whitespace-pre-wrap pt-2" key={i}>
+// //                           <CodeDisplayBlock code={part} lang="" />
+// //                         </pre>
+// //                       )
+// //                     )}
+// //                   </ChatBubbleMessage>
+// //                   <ChatBubbleTimestamp
+// //                     timestamp={new Date().toLocaleTimeString([], {
+// //                       hour: "2-digit",
+// //                       minute: "2-digit",
+// //                     })}
+// //                   />
+// //                 </div>
+
+// //                 {isLastAssistant && (
+// //                   <ChatBubbleActionWrapper variant="received">
+// //                     {!isGenerating &&
+// //                       ChatAiIcons.map((icon, iconIndex) => {
+// //                         const Icon = icon.icon;
+// //                         return (
+// //                           <ChatBubbleAction
+// //                             key={iconIndex}
+// //                             icon={<Icon className="size-3" />}
+// //                             onClick={() =>
+// //                               handleActionClick(icon.label, index)
+// //                             }
+// //                           />
+// //                         );
+// //                       })}
+// //                   </ChatBubbleActionWrapper>
+// //                 )}
+// //               </ChatBubble>
+// //             );
+// //           })}
+
+// //           {/* Loading Indicator */}
+// //           {isGenerating && (
+// //             <ChatBubble variant="received">
+// //               <ChatBubbleAvatar fallback="🤖" />
+// //               <ChatBubbleMessage isLoading />
+// //             </ChatBubble>
+// //           )}
+// //         </ChatMessageList>
+// //       </div>
+
+// //       {/* Chat Input Form */}
+// //       <div className="w-full px-4 pb-4">
+// //         <form
+// //           ref={formRef}
+// //           onSubmit={onSubmit}
+// //           className="relative rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring"
+// //         >
+// //           <ChatInput
+// //             value={input}
+// //             onKeyDown={onKeyDown}
+// //             onChange={handleInputChange}
+// //             placeholder="Type your message here..."
+// //             className="rounded-lg bg-background border-0 shadow-none focus-visible:ring-0"
+// //           />
+// //           <div className="flex items-center p-3 pt-0">
+// //             <Button variant="ghost" size="icon">
+// //               <Paperclip className="size-4" />
+// //               <span className="sr-only">Attach file</span>
+// //             </Button>
+
+// //             <Button variant="ghost" size="icon">
+// //               <Mic className="size-4" />
+// //               <span className="sr-only">Use Microphone</span>
+// //             </Button>
+
+// //             <Button
+// //               disabled={!input || isLoading}
+// //               type="submit"
+// //               size="sm"
+// //               className="ml-auto gap-1.5"
+// //             >
+// //               Send Message
+// //               <CornerDownLeft className="size-3.5" />
+// //             </Button>
+// //           </div>
+// //         </form>
+// //       </div>
+// //     </main>
+// //   );
+// // }

@@ -1,5 +1,3 @@
-
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -29,24 +27,27 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  authoredTasks     Task[]           @relation("TaskAuthor")
-  assignedTasks     Task[]           @relation("TaskAssignee")
-  taskAssignments   TaskAssignment[]
-  attachments       Attachment[]
-  comments          Comment[]
-  team              Team?            @relation(fields: [teamId], references: [id])
-  managedProjects   Project[]        @relation("ProjectManager")
-  leadOfTeams       Team[]           @relation("TeamLead")
+  authoredTasks   Task[]           @relation("TaskAuthor")
+  assignedTasks   Task[]           @relation("TaskAssignee")
+  taskAssignments TaskAssignment[]
+  attachments     Attachment[]
+  comments        Comment[]
+  team            Team?            @relation(fields: [teamId], references: [id])
+  managedProjects Project[]        @relation("ProjectManager")
+  leadOfTeams     Team[]           @relation("TeamLead")
+  chats          Chat[]    @relation("ChatUsers")
+  adminChats     Chat[]    @relation("ChatAdmin")
+  messages       Message[] @relation("UserMessages")
 }
 
 model Team {
-  id               String  @id @default(cuid())
-  teamName         String
-  teamLead        User?   @relation("TeamLead" ,fields: [teamLeadId], references: [id])
-  teamLeadId      String?
+  id         String  @id @default(cuid())
+  teamName   String
+  teamLead   User?   @relation("TeamLead", fields: [teamLeadId], references: [id])
+  teamLeadId String?
 
-  projectTeams   ProjectTeam[]
-  members        User[]
+  projectTeams ProjectTeam[]
+  members      User[]
 }
 
 model Project {
@@ -61,9 +62,9 @@ model Project {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  teams ProjectTeam[]
-  tasks Task[]
-  manager User @relation("ProjectManager", fields: [managerId], references: [id])
+  teams   ProjectTeam[]
+  tasks   Task[]
+  manager User          @relation("ProjectManager", fields: [managerId], references: [id])
 }
 
 model ProjectTeam {
@@ -126,15 +127,60 @@ model Comment {
   user User @relation(fields: [userId], references: [id])
 }
 
+// model Attachment {
+//   id           String  @id @default(cuid())
+//   fileUrl      String
+//   fileName     String?
+//   taskId       String
+//   uploadedById String
+
+//   task       Task @relation(fields: [taskId], references: [id])
+//   uploadedBy User @relation(fields: [uploadedById], references: [id])
+// }
+
 model Attachment {
-  id           String  @id @default(cuid())
-  fileUrl      String
-  fileName     String?
-  taskId       String
+  id         String   @id @default(cuid())
+  fileName   String
+  fileType   String // e.g., image/png, application/pdf
+  url        String // Public URL or local path
+  size       Int? // File size in bytes
+  message    Message?  @relation(fields: [messageId], references: [id])
+  messageId  String?
+  uploadedAt DateTime @default(now())
+  
+  taskId     String?
   uploadedById String
 
-  task       Task @relation(fields: [taskId], references: [id])
+  task       Task? @relation(fields: [taskId], references: [id])
   uploadedBy User @relation(fields: [uploadedById], references: [id])
+}
+
+model Chat {
+  id            String    @id @default(cuid())
+  name          String
+  isGroupChat   Boolean   @default(false)
+  participants  User[]    @relation("ChatUsers")
+  admin         User?      @relation("ChatAdmin", fields: [adminId], references: [id])
+  adminId       String?
+  lastMessage   Message?  @relation("LastMessage", fields: [lastMessageId], references: [id]) 
+  lastMessageId String?   @unique
+  messages      Message[] @relation("ChatMessages")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Message {
+  id          String       @id @default(cuid())
+  content     String
+  chatId      String
+  senderId    String
+  attachments Attachment[]
+
+  chat   Chat   @relation("ChatMessages", fields: [chatId], references: [id])
+  sender User   @relation("UserMessages", fields: [senderId], references: [id])
+  lastMessageOf  Chat?      @relation("LastMessage")
+
+
 }
 
 enum Status {
