@@ -24,17 +24,23 @@ const mail_1 = require("../utils/mail");
 const crypto_1 = __importDefault(require("crypto"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const prisma = new client_1.PrismaClient();
-const options = {
+const THIRTY_DAYS = 1000 * 60 * 60 * 24 * 30;
+const refreshTokenCookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    maxAge: 1000 * 60 * 60 * 24 * 10,
+    maxAge: THIRTY_DAYS,
+};
+const accessTokenCookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 1000 * 60 * 15, // 15 minutes
 };
 const generateAccessRefreshToken = (user) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const accessToken = yield (0, token_1.generateAccessToken)(user);
-        console.log("✅ accessToken", accessToken);
+        // console.log("✅ accessToken", accessToken);
         const refreshToken = yield (0, token_1.generateRefreshToken)(user);
-        console.log("✅ refreshToken", refreshToken);
+        // console.log("✅ refreshToken", refreshToken);
         yield prisma.user.update({
             where: { id: user.id },
             data: { refreshToken },
@@ -126,8 +132,8 @@ const createUser = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, v
     });
     return res
         .status(201)
-        .cookie("accessToken", accessToken, options)
-        .cookie("refreshToken", refreshToken, options)
+        .cookie("accessToken", accessToken, accessTokenCookieOptions)
+        .cookie("refreshToken", refreshToken, refreshTokenCookieOptions)
         .json(new ApiResponse_1.ApiResponse(201, createdUser, "User created successfully"));
 }));
 exports.createUser = createUser;
@@ -172,8 +178,8 @@ const loginUser = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, vo
     });
     return res
         .status(200)
-        .cookie("accessToken", accessToken, options)
-        .cookie("refreshToken", refreshToken, options)
+        .cookie("accessToken", accessToken, accessTokenCookieOptions)
+        .cookie("refreshToken", refreshToken, refreshTokenCookieOptions)
         .json(new ApiResponse_1.ApiResponse(200, {
         user: loggedInUser,
     }, "User logged in successfully"));
@@ -192,8 +198,8 @@ const logoutUser = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, v
     }
     return res
         .status(200)
-        .clearCookie("accessToken", options)
-        .clearCookie("refreshToken", options)
+        .clearCookie("accessToken", accessTokenCookieOptions)
+        .clearCookie("refreshToken", refreshTokenCookieOptions)
         .json(new ApiResponse_1.ApiResponse(200, {}, "User Logged out successfully"));
 }));
 exports.logoutUser = logoutUser;
@@ -410,8 +416,8 @@ const refreshAccessToken = (0, asyncHandler_1.default)((req, res) => __awaiter(v
         });
         return res
             .status(200)
-            .cookie("accessToken", accessToken, options)
-            .cookie("refreshToken", newRefreshToken, options)
+            .cookie("accessToken", accessToken, accessTokenCookieOptions)
+            .cookie("refreshToken", newRefreshToken, refreshTokenCookieOptions)
             .json(new ApiResponse_1.ApiResponse(200, { accessToken, refreshToken: newRefreshToken }, "Access token refreshed"));
     }
     catch (error) {
@@ -438,8 +444,8 @@ const handleSocialLogin = (0, asyncHandler_1.default)((req, res) => __awaiter(vo
     const { accessToken, refreshToken } = yield generateAccessRefreshToken(user);
     return res
         .status(301)
-        .cookie("accessToken", accessToken, options) // set the access token in the cookie
-        .cookie("refreshToken", refreshToken, options) // set the refresh token in the cookie
+        .cookie("accessToken", accessToken, accessTokenCookieOptions) // set the access token in the cookie
+        .cookie("refreshToken", refreshToken, refreshTokenCookieOptions) // set the refresh token in the cookie
         .redirect(
     // redirect user to the frontend with access and refresh token in case user is not using cookies
     `${process.env.CLIENT_SSO_REDIRECT_URL}?accessToken=${accessToken}&refreshToken=${refreshToken}`);

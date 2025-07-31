@@ -23,20 +23,27 @@ interface MulterRequest extends Request {
 }
 
 const prisma = new PrismaClient();
+const THIRTY_DAYS = 1000 * 60 * 60 * 24 * 30;
 
-const options = {
+const refreshTokenCookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  maxAge: 1000 * 60 * 60 * 24 * 10,
-
+  maxAge: THIRTY_DAYS,
 };
+
+const accessTokenCookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  maxAge: 1000 * 60 * 15, // 15 minutes
+};
+
 
 const generateAccessRefreshToken = async (user: User) => {
   try {
     const accessToken = await generateAccessToken(user);
-    console.log("✅ accessToken", accessToken);
+    // console.log("✅ accessToken", accessToken);
     const refreshToken = await generateRefreshToken(user);
-    console.log("✅ refreshToken", refreshToken);
+    // console.log("✅ refreshToken", refreshToken);
     await prisma.user.update({
       where: { id: user.id },
       data: { refreshToken },
@@ -162,8 +169,8 @@ const createUser = asyncHandler(
 
     return res
       .status(201)
-      .cookie("accessToken", accessToken, options)
-      .cookie("refreshToken", refreshToken, options)
+      .cookie("accessToken", accessToken, accessTokenCookieOptions)
+      .cookie("refreshToken", refreshToken, refreshTokenCookieOptions)
       .json(new ApiResponse(201, createdUser, "User created successfully"));
   }
 );
@@ -223,8 +230,8 @@ const loginUser = asyncHandler(
 
     return res
       .status(200)
-      .cookie("accessToken", accessToken, options)
-      .cookie("refreshToken", refreshToken, options)
+      .cookie("accessToken", accessToken, accessTokenCookieOptions)
+      .cookie("refreshToken", refreshToken, refreshTokenCookieOptions)
       .json(
         new ApiResponse(
           200,
@@ -249,8 +256,8 @@ const logoutUser = asyncHandler(
     }
     return res
       .status(200)
-      .clearCookie("accessToken", options)
-      .clearCookie("refreshToken", options)
+      .clearCookie("accessToken", accessTokenCookieOptions)
+      .clearCookie("refreshToken", refreshTokenCookieOptions)
       .json(new ApiResponse(200, {}, "User Logged out successfully"));
   }
 );
@@ -534,8 +541,8 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
     return res
       .status(200)
-      .cookie("accessToken", accessToken, options)
-      .cookie("refreshToken", newRefreshToken, options)
+      .cookie("accessToken", accessToken, accessTokenCookieOptions)
+      .cookie("refreshToken", newRefreshToken, refreshTokenCookieOptions)
       .json(
         new ApiResponse(
           200,
@@ -577,8 +584,8 @@ console.log("✅ session", req.session);
 
   return res
     .status(301)
-    .cookie("accessToken", accessToken, options) // set the access token in the cookie
-    .cookie("refreshToken", refreshToken, options) // set the refresh token in the cookie
+    .cookie("accessToken", accessToken, accessTokenCookieOptions) // set the access token in the cookie
+    .cookie("refreshToken", refreshToken, refreshTokenCookieOptions) // set the refresh token in the cookie
     .redirect(
       // redirect user to the frontend with access and refresh token in case user is not using cookies
       `${process.env.CLIENT_SSO_REDIRECT_URL}?accessToken=${accessToken}&refreshToken=${refreshToken}`

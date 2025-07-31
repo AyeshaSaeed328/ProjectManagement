@@ -1,47 +1,12 @@
+import React from 'react'
 
-// // components/Chat.tsx or wherever you want to connect
-// "use client";
-// import { useEffect, useRef, useState } from "react";
-// import { getSocket } from "@/lib/utils";
+const Chat = () => {
+  return (
+    <div>Chat</div>
+  )
+}
 
-// const Chat = () => {
-//   const [messages, setMessages] = useState<string[]>([]);
-//   const socketRef = useRef<any>(null);
-
-//   useEffect(() => {
-
-//     if (!token) return;
-
-//     const socket = getSocket(token);
-//     socketRef.current = socket;
-
-//     socket.on("connect", () => {
-//       console.log("Socket connected:", socket.id);
-//     });
-
-//     socket.on("newMessage", (msg: string) => {
-//       setMessages((prev) => [...prev, msg]);
-//     });
-
-//     return () => {
-//       socket.disconnect();
-//     };
-//   }, []);
-
-//   return (
-//     <div>
-//       <h2>Messages:</h2>
-//       {messages.map((m, i) => (
-//         <div key={i}>{m}</div>
-//       ))}
-//     </div>
-//   );
-// };
-
-// export default Chat;
-
-
-
+export default Chat
 
 // // "use client";
 

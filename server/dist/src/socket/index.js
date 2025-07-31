@@ -13,11 +13,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.emitSocketEvent = exports.initializeSocketIO = void 0;
-const cookie_1 = __importDefault(require("cookie"));
 const constants_1 = require("../constants");
 const ApiError_1 = require("../utils/ApiError");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const client_1 = require("@prisma/client");
+// import cookie from "cookie";
 const prisma = new client_1.PrismaClient();
 /**
  * @description This function is responsible to allow user to join the chat represented by chatId (chatId). event happens when user switches between the chats
@@ -55,26 +55,28 @@ const mountParticipantStoppedTypingEvent = (socket) => {
  * @param {Server<import("socket.io/dist/typed-events").DefaultEventsMap, import("socket.io/dist/typed-events").DefaultEventsMap, import("socket.io/dist/typed-events").DefaultEventsMap, any>} io
  */
 const initializeSocketIO = (io) => {
-    return io.on("connection", (socket) => __awaiter(void 0, void 0, void 0, function* () {
+    io.on("connection", (socket) => __awaiter(void 0, void 0, void 0, function* () {
         var _a, _b, _c;
         try {
-            console.log("User connected 🗼. userId: ", (_a = socket.user) === null || _a === void 0 ? void 0 : _a.id);
-            // parse the cookies from the handshake headers (This is only possible if client has `withCredentials: true`)
-            const cookies = cookie_1.default.parse(((_b = socket.handshake.headers) === null || _b === void 0 ? void 0 : _b.cookie) || "");
-            let token = cookies === null || cookies === void 0 ? void 0 : cookies.accessToken; // get the accessToken
+            const rawCookieHeader = (_a = socket.handshake.headers) === null || _a === void 0 ? void 0 : _a.cookie;
+            console.log("Raw cookie header:", rawCookieHeader);
+            // const cookies = cookie.parse(rawCookieHeader || "");
+            // console.log("🧪 Parsed cookies:", cookies);
+            // let token = cookies?.accessToken;
+            const raw = ((_b = socket.handshake.headers) === null || _b === void 0 ? void 0 : _b.cookie) || "";
+            const match = raw.match(/(?:^|;\s*)accessToken=([^;]+)/);
+            let token = match === null || match === void 0 ? void 0 : match[1];
+            console.log("Parsed token:", token);
             if (!token) {
-                // If there is no access token in cookies. Check inside the handshake auth
                 token = (_c = socket.handshake.auth) === null || _c === void 0 ? void 0 : _c.token;
             }
             if (!token) {
-                // Token is required for the socket to work
                 throw new ApiError_1.ApiError(401, "Un-authorized handshake. Token is missing");
             }
-            const decodedToken = jsonwebtoken_1.default.verify(token, process.env.ACCESS_TOKEN_SECRET); // decode the token
+            console.log("✅ Token found:", token);
+            const decodedToken = jsonwebtoken_1.default.verify(token, process.env.ACCESS_TOKEN_SECRET);
             const user = yield prisma.user.findUnique({
-                where: {
-                    id: decodedToken === null || decodedToken === void 0 ? void 0 : decodedToken._id,
-                },
+                where: { id: decodedToken === null || decodedToken === void 0 ? void 0 : decodedToken.id },
                 select: {
                     id: true,
                     email: true,
@@ -82,34 +84,34 @@ const initializeSocketIO = (io) => {
                     profilePicture: true,
                     teamId: true,
                     isEmailVerified: true,
-                    role: true
+                    role: true,
                 },
             });
-            // retrieve the user
             if (!user) {
                 throw new ApiError_1.ApiError(401, "Un-authorized handshake. Token is invalid");
             }
-            socket.user = user; // mount te user object to the socket
-            // We are creating a room with user id so that if user is joined but does not have any active chat going on.
-            // still we want to emit some socket events to the user.
-            // so that the client can catch the event and show the notifications.
-            socket.join(user.id.toString());
-            socket.emit(constants_1.ChatEventEnum.CONNECTED_EVENT); // emit the connected event so that client is aware
-            console.log("User connected 🗼. userId: ", user.id.toString());
-            // Common events that needs to be mounted on the initialization
-            mountJoinChatEvent(socket);
-            mountParticipantTypingEvent(socket);
-            mountParticipantStoppedTypingEvent(socket);
+            socket.user = user; // attach user to socket instance
+            console.log("✅ User authenticated:", user);
+            socket.join(user.id);
+            console.log("📥 User joined room. userId:", user.id);
+            socket.emit(constants_1.ChatEventEnum.CONNECTED_EVENT);
+            // Mount core event handlers here
+            // mountJoinChatEvent(socket);
+            // mountParticipantTypingEvent(socket);
+            // mountParticipantStoppedTypingEvent(socket);
             socket.on(constants_1.ChatEventEnum.DISCONNECT_EVENT, () => {
                 var _a, _b;
-                console.log("user has disconnected 🚫. userId: " + ((_a = socket.user) === null || _a === void 0 ? void 0 : _a.id));
+                console.log("🚫 User disconnected. userId:", (_a = socket.user) === null || _a === void 0 ? void 0 : _a.id);
                 if ((_b = socket.user) === null || _b === void 0 ? void 0 : _b.id) {
                     socket.leave(socket.user.id);
                 }
             });
         }
         catch (error) {
-            socket.emit(constants_1.ChatEventEnum.SOCKET_ERROR_EVENT, error instanceof Error ? error.message : "Something went wrong while connecting to the socket.");
+            console.error("❌ Socket authentication error:", error);
+            socket.emit(constants_1.ChatEventEnum.SOCKET_ERROR_EVENT, error instanceof Error
+                ? error.message
+                : "Something went wrong while connecting to the socket.");
         }
     }));
 };

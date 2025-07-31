@@ -44,9 +44,15 @@ const {
   skip: isLoading || !isAuthenticated,
 });
 
-  const { data: projects, isLoading: isProjectsLoading } =
-    useGetProjectsQuery();
+  
 
+    const {
+      data: projects,
+      isLoading: isProjectsLoading,
+      isError: isProjectsError,
+    } = useGetProjectsQuery(undefined, {
+      skip: isLoading || !isAuthenticated,
+    });
   const isDarkMode = useAppSelector((state) => state.global.isDarkMode);
 
 

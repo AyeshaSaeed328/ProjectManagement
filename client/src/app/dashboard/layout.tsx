@@ -1,6 +1,9 @@
+
+
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import DashboardWrapper from "@/app/dashboardWrapper";
+import { attemptTokenRefresh } from "@/lib/auth";
 
 export default async function ProtectedLayout({
   children,
@@ -8,11 +11,16 @@ export default async function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const cookieStore = await cookies();
-  const token = cookieStore.get("accessToken")?.value;
+  const accessToken = cookieStore.get("accessToken")?.value;
+  // console.log("cookie", accessToken)
 
-  if (!token) {
-    redirect("/login");
+  if (!accessToken) {
+    const refreshed = await attemptTokenRefresh();
+    if (!refreshed) {
+      redirect("/login");
+    }
   }
 
   return <DashboardWrapper>{children}</DashboardWrapper>;
 }
+

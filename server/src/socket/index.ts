@@ -5,7 +5,7 @@ import { ApiError } from "../utils/ApiError";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
-
+// import cookie from "cookie";
 
 const prisma = new PrismaClient();
 
@@ -48,69 +48,81 @@ const mountParticipantStoppedTypingEvent = (socket: Socket) => {
  * @param {Server<import("socket.io/dist/typed-events").DefaultEventsMap, import("socket.io/dist/typed-events").DefaultEventsMap, import("socket.io/dist/typed-events").DefaultEventsMap, any>} io
  */
 const initializeSocketIO = (io: Server) => {
-  return io.on("connection", async (socket: Socket) => {
-    try {
-        console.log("User connected 🗼. userId: ", socket.user?.id);
-      // parse the cookies from the handshake headers (This is only possible if client has `withCredentials: true`)
-      const cookies = cookie.parse(socket.handshake.headers?.cookie || "");
+  io.on("connection", async (socket: Socket) => {
 
-      let token = cookies?.accessToken; // get the accessToken
+    try {
+      const rawCookieHeader = socket.handshake.headers?.cookie;
+      console.log("Raw cookie header:", rawCookieHeader);
+
+      // const cookies = cookie.parse(rawCookieHeader || "");
+      // console.log("🧪 Parsed cookies:", cookies);
+
+      // let token = cookies?.accessToken;
+      const raw = socket.handshake.headers?.cookie || "";
+      const match = raw.match(/(?:^|;\s*)accessToken=([^;]+)/);
+      let token = match?.[1];
+
+      console.log("Parsed token:", token);
 
       if (!token) {
-        // If there is no access token in cookies. Check inside the handshake auth
         token = socket.handshake.auth?.token;
       }
 
       if (!token) {
-        // Token is required for the socket to work
         throw new ApiError(401, "Un-authorized handshake. Token is missing");
       }
 
-      const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!) as JwtPayload; // decode the token
+      console.log("✅ Token found:", token);
+
+      const decodedToken = jwt.verify(
+        token,
+        process.env.ACCESS_TOKEN_SECRET!
+      ) as JwtPayload;
 
       const user = await prisma.user.findUnique({
-        where: {
-          id: decodedToken?._id,
+        where: { id: decodedToken?.id },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          profilePicture: true,
+          teamId: true,
+          isEmailVerified: true,
+          role: true,
         },
-       select: {
-        id: true,
-        email: true,
-        username: true,
-        profilePicture: true,
-        teamId: true,
-        isEmailVerified: true,
-        role: true
-      },
       });
 
-      // retrieve the user
       if (!user) {
         throw new ApiError(401, "Un-authorized handshake. Token is invalid");
       }
-      socket.user = user; // mount te user object to the socket
 
-      // We are creating a room with user id so that if user is joined but does not have any active chat going on.
-      // still we want to emit some socket events to the user.
-      // so that the client can catch the event and show the notifications.
-      socket.join(user.id.toString());
-      socket.emit(ChatEventEnum.CONNECTED_EVENT); // emit the connected event so that client is aware
-      console.log("User connected 🗼. userId: ", user.id.toString());
+      socket.user = user; // attach user to socket instance
 
-      // Common events that needs to be mounted on the initialization
-      mountJoinChatEvent(socket);
-      mountParticipantTypingEvent(socket);
-      mountParticipantStoppedTypingEvent(socket);
+      console.log("✅ User authenticated:", user);
+
+      socket.join(user.id);
+      console.log("📥 User joined room. userId:", user.id);
+
+      socket.emit(ChatEventEnum.CONNECTED_EVENT);
+
+      // Mount core event handlers here
+      // mountJoinChatEvent(socket);
+      // mountParticipantTypingEvent(socket);
+      // mountParticipantStoppedTypingEvent(socket);
 
       socket.on(ChatEventEnum.DISCONNECT_EVENT, () => {
-        console.log("user has disconnected 🚫. userId: " + socket.user?.id);
+        console.log("🚫 User disconnected. userId:", socket.user?.id);
         if (socket.user?.id) {
           socket.leave(socket.user.id);
         }
       });
     } catch (error) {
+      console.error("❌ Socket authentication error:", error);
       socket.emit(
         ChatEventEnum.SOCKET_ERROR_EVENT,
-        error instanceof Error ? error.message : "Something went wrong while connecting to the socket."
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while connecting to the socket."
       );
     }
   });
@@ -127,7 +139,12 @@ const initializeSocketIO = (io: Server) => {
 
 type ChatEventType = (typeof AvailableChatEvents)[number];
 
-const emitSocketEvent = (req: Request, roomId: string, event: ChatEventType, payload: any) => {
+const emitSocketEvent = (
+  req: Request,
+  roomId: string,
+  event: ChatEventType,
+  payload: any
+) => {
   req.app.get("io").in(roomId).emit(event, payload);
 };
 

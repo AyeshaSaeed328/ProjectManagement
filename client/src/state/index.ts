@@ -1,5 +1,8 @@
 import {createSlice, PayloadAction} from "@reduxjs/toolkit";
 import {User} from "@/state/api";
+import { Socket } from "socket.io-client";
+
+
 
 interface AuthState {
   user: User | null;
@@ -7,10 +10,16 @@ interface AuthState {
   isLoading: boolean;
 }
 
+interface SocketState {
+  isConnected: boolean;
+  socket: any | null;
+}
+
 export interface initialStateTypes{
     isSidebarOpen: boolean;
     isDarkMode: boolean;  
-    auth: AuthState;  
+    auth: AuthState; 
+    chat: SocketState; 
 }
 
 const initialState: initialStateTypes = {
@@ -20,6 +29,10 @@ const initialState: initialStateTypes = {
       user: null,
       isAuthenticated: false,
       isLoading: false,
+    },
+    chat: {
+      isConnected: false,
+      socket: null,
     },
 };
 
@@ -45,8 +58,16 @@ export const globalSlice = createSlice({
       state.auth.isAuthenticated = false;
       state.auth.isLoading = false;
     },
+    setSocket: (state, action: PayloadAction<Socket>) => {
+      state.chat.socket = action.payload;
+      state.chat.isConnected = !!action.payload;
+    },
+    clearSocket: (state) => {
+      state.chat.socket = null;
+      state.chat.isConnected = false;
+    },
 
   },
 });
-export const { toggleSidebar, toggleDarkMode, setAuthUser, setAuthLoading, clearAuth } = globalSlice.actions;
+export const { toggleSidebar, toggleDarkMode, setAuthUser, setAuthLoading, clearAuth, setSocket, clearSocket } = globalSlice.actions;
 export default globalSlice.reducer;

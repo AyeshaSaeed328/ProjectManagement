@@ -29,11 +29,10 @@ exports.httpServer = httpServer;
 const io = new socket_io_1.Server(httpServer, {
     pingTimeout: 60000,
     cors: {
-        origin: "*",
+        origin: "http://localhost:3000",
         credentials: true,
     },
 });
-app.set("io", io);
 app.set("io", io);
 app.use(express_1.default.json());
 app.use(body_parser_1.default.urlencoded({ extended: false }));
@@ -42,7 +41,7 @@ app.use(helmet_1.default.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use((0, morgan_1.default)('common'));
 app.use(body_parser_1.default.json());
 app.use((0, cors_1.default)({
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: 'http://localhost:3000',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
 }));

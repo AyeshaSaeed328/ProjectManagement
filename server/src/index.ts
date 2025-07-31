@@ -34,7 +34,7 @@ const io = new Server<
 >(httpServer, {
   pingTimeout: 60000,
   cors: {
-    origin: "*",
+    origin: "http://localhost:3000",
     credentials: true,
   },
 });
@@ -42,7 +42,7 @@ const io = new Server<
 app.set("io", io);
 
 
-app.set("io", io);
+
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(helmet());
@@ -50,7 +50,7 @@ app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use(morgan('common'));
 app.use(bodyParser.json());
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: 'http://localhost:3000',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
 }));
