@@ -24,6 +24,12 @@ const task_router_1 = __importDefault(require("./routes/task.router"));
 const project_team_router_1 = __importDefault(require("./routes/project-team.router"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
+app.use((0, express_session_1.default)({
+    secret: process.env.EXPRESS_SESSION_SECRET,
+    resave: true,
+    saveUninitialized: true,
+}));
+app.use((0, cookie_parser_1.default)());
 const httpServer = (0, http_1.createServer)(app);
 exports.httpServer = httpServer;
 const io = new socket_io_1.Server(httpServer, {
@@ -45,14 +51,8 @@ app.use((0, cors_1.default)({
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
 }));
-app.use((0, express_session_1.default)({
-    secret: process.env.EXPRESS_SESSION_SECRET,
-    resave: true,
-    saveUninitialized: true,
-}));
 app.use(passport_1.default.initialize());
 app.use(passport_1.default.session()); // persistent login sessions
-app.use((0, cookie_parser_1.default)());
 +app.get('/', (req, res) => {
     res.send('Welcome to the Project Management API');
 });

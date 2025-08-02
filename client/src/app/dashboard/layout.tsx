@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import DashboardWrapper from "@/app/dashboardWrapper";
 import { attemptTokenRefresh } from "@/lib/auth";
+import { SocketProvider } from "@/context/socket";
 
 export default async function ProtectedLayout({
   children,
@@ -21,6 +22,6 @@ export default async function ProtectedLayout({
     }
   }
 
-  return <DashboardWrapper>{children}</DashboardWrapper>;
+  return <SocketProvider><DashboardWrapper>{children}</DashboardWrapper></SocketProvider>;
 }
 

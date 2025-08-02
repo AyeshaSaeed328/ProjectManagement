@@ -19,10 +19,6 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const client_1 = require("@prisma/client");
 // import cookie from "cookie";
 const prisma = new client_1.PrismaClient();
-/**
- * @description This function is responsible to allow user to join the chat represented by chatId (chatId). event happens when user switches between the chats
- * @param {Socket<import("socket.io/dist/typed-events").DefaultEventsMap, import("socket.io/dist/typed-events").DefaultEventsMap, import("socket.io/dist/typed-events").DefaultEventsMap, any>} socket
- */
 const mountJoinChatEvent = (socket) => {
     socket.on(constants_1.ChatEventEnum.JOIN_CHAT_EVENT, (chatId) => {
         console.log(`User joined the chat 🤝. chatId: `, chatId);
@@ -41,19 +37,11 @@ const mountParticipantTypingEvent = (socket) => {
         socket.in(chatId).emit(constants_1.ChatEventEnum.TYPING_EVENT, chatId);
     });
 };
-/**
- * @description This function is responsible to emit the stopped typing event to the other participants of the chat
- * @param {Socket<import("socket.io/dist/typed-events").DefaultEventsMap, import("socket.io/dist/typed-events").DefaultEventsMap, import("socket.io/dist/typed-events").DefaultEventsMap, any>} socket
- */
 const mountParticipantStoppedTypingEvent = (socket) => {
     socket.on(constants_1.ChatEventEnum.STOP_TYPING_EVENT, (chatId) => {
         socket.in(chatId).emit(constants_1.ChatEventEnum.STOP_TYPING_EVENT, chatId);
     });
 };
-/**
- *
- * @param {Server<import("socket.io/dist/typed-events").DefaultEventsMap, import("socket.io/dist/typed-events").DefaultEventsMap, import("socket.io/dist/typed-events").DefaultEventsMap, any>} io
- */
 const initializeSocketIO = (io) => {
     io.on("connection", (socket) => __awaiter(void 0, void 0, void 0, function* () {
         var _a, _b, _c;

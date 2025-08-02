@@ -1,6 +1,15 @@
-import React from 'react'
+'use client'
+
+import { useSocket } from '@/context/socket'
+import React, { useEffect } from 'react'
+
 
 const Chat = () => {
+  const { socket } = useSocket();
+  useEffect(() => {
+    if (!socket) return;
+  },[socket])
+
   return (
     <div>Chat</div>
   )

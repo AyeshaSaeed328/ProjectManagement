@@ -24,6 +24,16 @@ import projectTeamRoutes from "./routes/project-team.router"
 dotenv.config();
 const app = express();
 
+
+app.use(
+  session({
+    secret: process.env.EXPRESS_SESSION_SECRET!,
+    resave: true,
+    saveUninitialized: true,
+  })
+); 
+app.use(cookieParser());
+
 const httpServer = createServer(app);
 
 const io = new Server<
@@ -58,17 +68,10 @@ app.use(cors({
 
 
 
-app.use(
-  session({
-    secret: process.env.EXPRESS_SESSION_SECRET!,
-    resave: true,
-    saveUninitialized: true,
-  })
-); 
 app.use(passport.initialize());
 app.use(passport.session()); // persistent login sessions
 
-app.use(cookieParser());
+
 
 +
 app.get('/', (req, res) => {

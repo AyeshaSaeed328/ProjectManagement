@@ -5,16 +5,13 @@ import Navbar from '@/(components)/Navbar'
 import Sidebar from '@/(components)/Sidebar'
 import {useAppSelector} from './redux'
 import { useGetProjectsQuery } from '@/state/api'
-import { setSocket, clearSocket } from "@/state";
 import { useEffect, useRef } from "react";
-import { io, Socket } from "socket.io-client";
 import { useAppDispatch } from './redux'
 
 
 const DashboardLayout = ({children}: {children: React.ReactNode}) => {
   const isSidebarOpen = useAppSelector((state) => state.global.isSidebarOpen,
 )
-const socketRef = useRef<Socket | null>(null);
 
   const dispatch = useAppDispatch();
 const isDarkMode = useAppSelector((state) => state.global.isDarkMode,
@@ -31,32 +28,6 @@ useEffect(() => {
   }
 }, [isDarkMode])
 
-useEffect(() => {
-    if (!isAuthenticated) return; // ensure only runs when authenticated
-
-    socketRef.current = io("http://localhost:4000", {
-      withCredentials: true,
-    });
-
-    socketRef.current.on("connect", () => {
-      console.log("🔌 Socket connected:", socketRef.current?.id);
-      dispatch(setSocket(socketRef.current!));
-    });
-
-    socketRef.current.on("disconnect", () => {
-      console.log("🔌 Socket disconnected");
-      dispatch(clearSocket());
-    });
-
-    socketRef.current.on("connect_error", (err) => {
-      console.error("⚠️ Socket connection error", err);
-    });
-
-    return () => {
-      socketRef.current?.disconnect();
-      dispatch(clearSocket());
-    };
-  }, [isAuthenticated, dispatch]);
 
 const {
   data: projects,

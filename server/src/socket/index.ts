@@ -9,10 +9,7 @@ import { Request, Response } from "express";
 
 const prisma = new PrismaClient();
 
-/**
- * @description This function is responsible to allow user to join the chat represented by chatId (chatId). event happens when user switches between the chats
- * @param {Socket<import("socket.io/dist/typed-events").DefaultEventsMap, import("socket.io/dist/typed-events").DefaultEventsMap, import("socket.io/dist/typed-events").DefaultEventsMap, any>} socket
- */
+
 const mountJoinChatEvent = (socket: Socket) => {
   socket.on(ChatEventEnum.JOIN_CHAT_EVENT, (chatId) => {
     console.log(`User joined the chat 🤝. chatId: `, chatId);
@@ -33,20 +30,14 @@ const mountParticipantTypingEvent = (socket: Socket) => {
   });
 };
 
-/**
- * @description This function is responsible to emit the stopped typing event to the other participants of the chat
- * @param {Socket<import("socket.io/dist/typed-events").DefaultEventsMap, import("socket.io/dist/typed-events").DefaultEventsMap, import("socket.io/dist/typed-events").DefaultEventsMap, any>} socket
- */
+
 const mountParticipantStoppedTypingEvent = (socket: Socket) => {
   socket.on(ChatEventEnum.STOP_TYPING_EVENT, (chatId) => {
     socket.in(chatId).emit(ChatEventEnum.STOP_TYPING_EVENT, chatId);
   });
 };
 
-/**
- *
- * @param {Server<import("socket.io/dist/typed-events").DefaultEventsMap, import("socket.io/dist/typed-events").DefaultEventsMap, import("socket.io/dist/typed-events").DefaultEventsMap, any>} io
- */
+
 const initializeSocketIO = (io: Server) => {
   io.on("connection", async (socket: Socket) => {
 
@@ -128,14 +119,6 @@ const initializeSocketIO = (io: Server) => {
   });
 };
 
-/**
- *
- * @param {import("express").Request} req - Request object to access the `io` instance set at the entry point
- * @param {string} roomId - Room where the event should be emitted
- * @param {AvailableChatEvents[0]} event - Event that should be emitted
- * @param {any} payload - Data that should be sent when emitting the event
- * @description Utility function responsible to abstract the logic of socket emission via the io instance
- */
 
 type ChatEventType = (typeof AvailableChatEvents)[number];
 
