@@ -48,7 +48,7 @@ const AddChatModal: React.FC<{
 
     // Function to fetch users
     const { data: res, isLoading: isUsersLoading, isError: isUsersError } = useGetAllUsersQuery();
-    const users = res.data ||[]
+    const users = res?.data ||[]
     const [createOneChat, { isLoading: isChatOneLoading }] = useCreateOneOnOneChatMutation();
     const [createGroupChat, { isLoading: isChatGroupLoading }] = useCreateGroupChatMutation();
 
@@ -243,7 +243,7 @@ const AddChatModal: React.FC<{
                                                             >
                                                                 <img
                                                                     className="h-6 w-6 rounded-full object-cover"
-                                                                    src={participant.profilePicture?.url}
+                                                                    src={participant.profilePicture}
                                                                 />
                                                                 <p className="text-white">
                                                                     {participant.username}
@@ -254,7 +254,7 @@ const AddChatModal: React.FC<{
                                                                     onClick={() => {
                                                                         setGroupParticipants(
                                                                             groupParticipants.filter(
-                                                                                (p) => p !== participant._id
+                                                                                (p) => p !== participant.id
                                                                             )
                                                                         );
                                                                     }}
@@ -269,7 +269,6 @@ const AddChatModal: React.FC<{
                                 <div className="mt-5 flex justify-between items-center gap-4">
                                     <Button
                                         disabled={creatingChat}
-                                        severity={"secondary"}
                                         onClick={handleClose}
                                         className="w-1/2"
                                     >
