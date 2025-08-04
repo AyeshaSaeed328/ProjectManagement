@@ -19,6 +19,8 @@ import userRoutes from "./routes/user.router"
 import teamRoutes from "./routes/team.router"
 import taskRoutes from "./routes/task.router"
 import projectTeamRoutes from "./routes/project-team.router"
+import chatRoutes from "./routes/chat.router"
+import messageRoutes from "./routes/message.router"
 
 
 dotenv.config();
@@ -83,6 +85,8 @@ app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/teams", teamRoutes);
 app.use("/api/v1/tasks", taskRoutes);
 app.use("/api/v1/project-team", projectTeamRoutes);
+app.use("/api/v1/chats", chatRoutes);
+app.use("/api/v1/messages", messageRoutes);
 
 initializeSocketIO(io);
 

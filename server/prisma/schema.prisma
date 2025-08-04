@@ -175,6 +175,8 @@ model Message {
   chatId      String
   senderId    String
   attachments Attachment[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   chat   Chat   @relation("ChatMessages", fields: [chatId], references: [id])
   sender User   @relation("UserMessages", fields: [senderId], references: [id])
