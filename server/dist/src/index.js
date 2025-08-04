@@ -22,6 +22,8 @@ const user_router_1 = __importDefault(require("./routes/user.router"));
 const team_router_1 = __importDefault(require("./routes/team.router"));
 const task_router_1 = __importDefault(require("./routes/task.router"));
 const project_team_router_1 = __importDefault(require("./routes/project-team.router"));
+const chat_router_1 = __importDefault(require("./routes/chat.router"));
+const message_router_1 = __importDefault(require("./routes/message.router"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use((0, express_session_1.default)({
@@ -61,6 +63,8 @@ app.use("/api/v1/users", user_router_1.default);
 app.use("/api/v1/teams", team_router_1.default);
 app.use("/api/v1/tasks", task_router_1.default);
 app.use("/api/v1/project-team", project_team_router_1.default);
+app.use("/api/v1/chats", chat_router_1.default);
+app.use("/api/v1/messages", message_router_1.default);
 (0, socket_1.initializeSocketIO)(io);
 const port = process.env.PORT || 4000;
 httpServer.listen(port, () => {

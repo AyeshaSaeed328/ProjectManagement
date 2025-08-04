@@ -28,11 +28,11 @@ const uploadOnCloudinary = (localFilePath) => __awaiter(void 0, void 0, void 0, 
             resource_type: "auto"
         });
         // console.log("File has been uploaded on clodinary", response.url)
-        fs_1.default.unlinkSync(localFilePath);
+        yield fs_1.default.promises.unlink(localFilePath);
         return response;
     }
     catch (error) {
-        fs_1.default.unlinkSync(localFilePath);
+        yield fs_1.default.promises.unlink(localFilePath);
         return null;
     }
 });

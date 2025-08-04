@@ -110,6 +110,10 @@ const Chat = () => {
   return (
     <>
     <div>Chat</div>
+    {socket && 
+      <p>
+        connected
+      </p>}
     
     </>
   )

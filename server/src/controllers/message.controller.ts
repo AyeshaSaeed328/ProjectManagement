@@ -17,7 +17,7 @@ const messageCommonInclude = {
       id: true,
       username: true,
       email: true,
-      avatar: true,
+      profilePicture: true,
     },
   },
   chat: {
@@ -27,7 +27,7 @@ const messageCommonInclude = {
           id: true,
           username: true,
           email: true,
-          avatar: true,
+          profilePicture: true,
         },
       },
     },

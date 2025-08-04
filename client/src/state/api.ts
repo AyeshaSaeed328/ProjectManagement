@@ -400,8 +400,25 @@ export const api = createApi({
       query: () => "chats",
       providesTags: ["Chats"],
     }),
-
-
+    createOneOnOneChat: build.mutation<ApiResponse<ChatInterface>, { receiverId: string }>({
+      query: ({ receiverId }) => ({
+        url: `chats/c/${receiverId}`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Chats"],
+    }),
+    createGroupChat: build.mutation<ApiResponse<ChatInterface>, { name: string; participantIds: string[] }>({
+      query: ({ name, participantIds }) => ({
+        url: "chats/group",
+        method: "POST",
+        body: { name, participantIds },
+      }),
+      invalidatesTags: ["Chats"],
+    }),
+    getAllUsers: build.query<ApiResponse<User[]>, void>({
+      query: () => "users/all",
+      providesTags: ["Users"],
+    }),
 
   }),
 });
@@ -439,4 +456,7 @@ export const {
 
   // Chat Module APIs
   useGetAllChatsQuery,
+  useCreateOneOnOneChatMutation,
+  useCreateGroupChatMutation,
+  useGetAllUsersQuery,
 } = api;

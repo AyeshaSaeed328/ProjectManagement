@@ -15,7 +15,7 @@ const chatCommonInclude = {
       id: true,
       username: true,
       email: true,
-      avatar: true,
+      profilePicture: true,
     },
   },
   lastMessage: {
@@ -25,7 +25,7 @@ const chatCommonInclude = {
           id: true,
           username: true,
           email: true,
-          avatar: true,
+          profilePicture: true,
         },
       },
     },

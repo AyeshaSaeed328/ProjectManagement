@@ -22,7 +22,7 @@ router.post("/logout", auth_middleware_1.verifyJWT, user_controller_1.logoutUser
 router.get("/current-user", auth_middleware_1.verifyJWT, user_controller_1.getCurrentUser);
 router.post("/change-password", auth_middleware_1.verifyJWT, user_controller_1.changeCurrentPassword);
 router.post("/resend-email-verification", auth_middleware_1.verifyJWT, user_controller_1.resendEmailVerification);
-router.get("/all", user_controller_1.getAllUsers);
+router.get("/all", auth_middleware_1.verifyJWT, user_controller_1.getAllUsers);
 router.patch("/update/:id", user_controller_1.updateUserDetails);
 // SSO routes
 router.get("/google", passport_1.default.authenticate("google", {

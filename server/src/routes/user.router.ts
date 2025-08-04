@@ -33,7 +33,7 @@ router.post("/logout", verifyJWT, logoutUser)
 router.get("/current-user", verifyJWT, getCurrentUser)
 router.post("/change-password", verifyJWT, changeCurrentPassword)
 router.post("/resend-email-verification", verifyJWT, resendEmailVerification)
-router.get("/all", getAllUsers);
+router.get("/all",verifyJWT, getAllUsers);
 router.patch("/update/:id", updateUserDetails);
 
 

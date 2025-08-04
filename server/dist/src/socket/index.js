@@ -84,9 +84,9 @@ const initializeSocketIO = (io) => {
             console.log("📥 User joined room. userId:", user.id);
             socket.emit(constants_1.ChatEventEnum.CONNECTED_EVENT);
             // Mount core event handlers here
-            // mountJoinChatEvent(socket);
-            // mountParticipantTypingEvent(socket);
-            // mountParticipantStoppedTypingEvent(socket);
+            mountJoinChatEvent(socket);
+            mountParticipantTypingEvent(socket);
+            mountParticipantStoppedTypingEvent(socket);
             socket.on(constants_1.ChatEventEnum.DISCONNECT_EVENT, () => {
                 var _a, _b;
                 console.log("🚫 User disconnected. userId:", (_a = socket.user) === null || _a === void 0 ? void 0 : _a.id);
