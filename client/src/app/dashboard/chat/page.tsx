@@ -1,227 +1,118 @@
 'use client'
 
 import { useSocket } from '@/context/socket'
-import React, { useEffect } from 'react'
+import {
+  PaperAirplaneIcon,
+  PaperClipIcon,
+  XCircleIcon,
+} from "@heroicons/react/20/solid";
+import { useEffect, useRef, useState } from "react";
+import { ChatInterface, Message } from '@/state/api';
+import { 
+  getChatObjectMetadata,
+  classNames
+
+ } from '@/lib/utils';
+ import { useAppSelector } from '@/app/redux';
+ import { useGetAllChatsQuery } from '@/state/api';
+ 
+
+const CONNECTED_EVENT = "connected";
+const DISCONNECT_EVENT = "disconnect";
+const JOIN_CHAT_EVENT = "joinChat";
+const NEW_CHAT_EVENT = "newChat";
+const TYPING_EVENT = "typing";
+const STOP_TYPING_EVENT = "stopTyping";
+const MESSAGE_RECEIVED_EVENT = "messageReceived";
+const LEAVE_CHAT_EVENT = "leaveChat";
+const UPDATE_GROUP_NAME_EVENT = "updateGroupName";
+const MESSAGE_DELETE_EVENT = "messageDeleted";
 
 
 const Chat = () => {
   const { socket } = useSocket();
-  useEffect(() => {
-    if (!socket) return;
-  },[socket])
+  const user = useAppSelector((state) => state.global.auth.user)
+  const {data:allChats, isLoading: chatsLoading, isError: chatsError} = useGetAllChatsQuery() 
+  console.log("chats", allChats)
+  const currentChat = useRef<ChatInterface | null>(null);
 
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isConnected, setIsConnected] = useState(false); 
+
+  const [openAddChat, setOpenAddChat] = useState(false); 
+  const [loadingChats, setLoadingChats] = useState(false);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+
+  // const [chats, setChats] = useState<ChatInterface[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [unreadMessages, setUnreadMessages] = useState<Message[]>(
+    []
+  );
+
+  const [isTyping, setIsTyping] = useState(false);
+  const [selfTyping, setSelfTyping] = useState(false);
+
+  const [message, setMessage] = useState("");
+  const [localSearchQuery, setLocalSearchQuery] = useState("");
+
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([])
+
+  const onConnect = () => {
+    setIsConnected(true);
+  };
+
+  const onDisconnect = () => {
+    setIsConnected(false);
+  };
+
+ // This useEffect handles the setting up and tearing down of socket event listeners.
+  useEffect(() => {
+    // If the socket isn't initialized, we don't set up listeners.
+    if (!socket) return;
+
+    // Set up event listeners for various socket events:
+    // Listener for when the socket connects.
+    socket.on(CONNECTED_EVENT, onConnect);
+    // Listener for when the socket disconnects.
+    socket.on(DISCONNECT_EVENT, onDisconnect);
+    // Listener for when a user is typing.
+    // socket.on(TYPING_EVENT, handleOnSocketTyping);
+    // // Listener for when a user stops typing.
+    // socket.on(STOP_TYPING_EVENT, handleOnSocketStopTyping);
+    // // Listener for when a new message is received.
+    // socket.on(MESSAGE_RECEIVED_EVENT, onMessageReceived);
+    // // Listener for the initiation of a new chat.
+    // socket.on(NEW_CHAT_EVENT, onNewChat);
+    // // Listener for when a user leaves a chat.
+    // socket.on(LEAVE_CHAT_EVENT, onChatLeave);
+    // // Listener for when a group's name is updated.
+    // socket.on(UPDATE_GROUP_NAME_EVENT, onGroupNameChange);
+    // //Listener for when a message is deleted
+    // socket.on(MESSAGE_DELETE_EVENT, onMessageDelete);
+    // When the component using this hook unmounts or if `socket` or `chats` change:
+    return () => {
+      // Remove all the event listeners we set up to avoid memory leaks and unintended behaviors.
+      socket.off(CONNECTED_EVENT, onConnect);
+      socket.off(DISCONNECT_EVENT, onDisconnect);
+      // socket.off(TYPING_EVENT, handleOnSocketTyping);
+      // socket.off(STOP_TYPING_EVENT, handleOnSocketStopTyping);
+      // socket.off(MESSAGE_RECEIVED_EVENT, onMessageReceived);
+      // socket.off(NEW_CHAT_EVENT, onNewChat);
+      // socket.off(LEAVE_CHAT_EVENT, onChatLeave);
+      // socket.off(UPDATE_GROUP_NAME_EVENT, onGroupNameChange);
+      // socket.off(MESSAGE_DELETE_EVENT, onMessageDelete);
+    };
+
+    
+  }, [socket, allChats]);
+ if(chatsLoading) return <div>Loading...</div>
+ if (chatsError) return <div>Error fetching chats</div>
   return (
+    <>
     <div>Chat</div>
+    
+    </>
   )
 }
 
 export default Chat
-
-// // "use client";
-
-// // import {
-// //   ChatBubble,
-// //   ChatBubbleAction,
-// //   ChatBubbleActionWrapper,
-// //   ChatBubbleAvatar,
-// //   ChatBubbleMessage,
-// //   ChatBubbleTimestamp,
-// // } from "@/components/ui/chat/chat-bubble";
-// // import { ChatInput } from "@/components/ui/chat/chat-input";
-// // import { ChatMessageList } from "@/components/ui/chat/chat-message-list";
-// // import { Button } from "@/components/ui/button";
-// // import {
-// //   CopyIcon,
-// //   CornerDownLeft,
-// //   Mic,
-// //   Paperclip,
-// //   RefreshCcw,
-// //   Volume2,
-// // } from "lucide-react";
-// // import { useChat } from "@ai-sdk/react";
-// // import { useEffect, useRef, useState } from "react";
-// // import Markdown from "react-markdown";
-// // import remarkGfm from "remark-gfm";
-// // import CodeDisplayBlock from "@/components/code-display-block";
-
-// // const ChatAiIcons = [
-// //   { icon: CopyIcon, label: "Copy" },
-// //   { icon: RefreshCcw, label: "Refresh" },
-// //   { icon: Volume2, label: "Volume" },
-// // ];
-
-// // export default function Home() {
-// //   const [isGenerating, setIsGenerating] = useState(false);
-
-// //   const {
-// //     messages,
-// //     setMessages,
-// //     input,
-// //     handleInputChange,
-// //     handleSubmit,
-// //     isLoading,
-// //     reload,
-// //   } = useChat({
-// //     onResponse: () => setIsGenerating(false),
-// //     onError: () => setIsGenerating(false),
-// //   });
-
-// //   const messagesRef = useRef<HTMLDivElement>(null);
-// //   const formRef = useRef<HTMLFormElement>(null);
-
-// //   useEffect(() => {
-// //     if (messagesRef.current) {
-// //       messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
-// //     }
-// //   }, [messages]);
-
-// //   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-// //     e.preventDefault();
-// //     if (!input || isLoading) return;
-// //     setIsGenerating(true);
-// //     handleSubmit(e);
-// //   };
-
-// //   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-// //     if (e.key === "Enter" && !e.shiftKey) {
-// //       e.preventDefault();
-// //       onSubmit(e as unknown as React.FormEvent<HTMLFormElement>);
-// //     }
-// //   };
-
-// //   const handleActionClick = async (action: string, index: number) => {
-// //     const message = messages[index];
-// //     if (!message || message.role !== "assistant") return;
-
-// //     if (action === "Copy") {
-// //       navigator.clipboard.writeText(message.content);
-// //     } else if (action === "Refresh") {
-// //       setIsGenerating(true);
-// //       try {
-// //         await reload();
-// //       } catch (err) {
-// //         console.error("Reload failed:", err);
-// //       } finally {
-// //         setIsGenerating(false);
-// //       }
-// //     } else if (action === "Volume") {
-// //       const utterance = new SpeechSynthesisUtterance(message.content);
-// //       speechSynthesis.speak(utterance);
-// //     }
-// //   };
-
-// //   return (
-// //     <main className="flex h-screen w-full max-w-3xl flex-col items-center mx-auto">
-// //       {/* Chat List */}
-// //       <div
-// //         ref={messagesRef}
-// //         className="flex-1 w-full overflow-y-auto py-6 px-4"
-// //       >
-// //         <ChatMessageList>
-// //           {messages.map((message, index) => {
-// //             const isAssistant = message.role === "assistant";
-// //             const isLastAssistant = isAssistant && index === messages.length - 1;
-
-// //             return (
-// //               <ChatBubble
-// //                 key={index}
-// //                 variant={isAssistant ? "received" : "sent"}
-// //               >
-// //                 <ChatBubbleAvatar
-// //                   fallback={isAssistant ? "🤖" : "👨🏽"}
-// //                 />
-// //                 <div className="flex flex-col gap-0.5">
-// //                   <ChatBubbleMessage
-// //                     variant={isAssistant ? "received" : "sent"}
-// //                   >
-// //                     {message.content.split("```").map((part, i) =>
-// //                       i % 2 === 0 ? (
-// //                         <Markdown key={i} remarkPlugins={[remarkGfm]}>
-// //                           {part}
-// //                         </Markdown>
-// //                       ) : (
-// //                         <pre className="whitespace-pre-wrap pt-2" key={i}>
-// //                           <CodeDisplayBlock code={part} lang="" />
-// //                         </pre>
-// //                       )
-// //                     )}
-// //                   </ChatBubbleMessage>
-// //                   <ChatBubbleTimestamp
-// //                     timestamp={new Date().toLocaleTimeString([], {
-// //                       hour: "2-digit",
-// //                       minute: "2-digit",
-// //                     })}
-// //                   />
-// //                 </div>
-
-// //                 {isLastAssistant && (
-// //                   <ChatBubbleActionWrapper variant="received">
-// //                     {!isGenerating &&
-// //                       ChatAiIcons.map((icon, iconIndex) => {
-// //                         const Icon = icon.icon;
-// //                         return (
-// //                           <ChatBubbleAction
-// //                             key={iconIndex}
-// //                             icon={<Icon className="size-3" />}
-// //                             onClick={() =>
-// //                               handleActionClick(icon.label, index)
-// //                             }
-// //                           />
-// //                         );
-// //                       })}
-// //                   </ChatBubbleActionWrapper>
-// //                 )}
-// //               </ChatBubble>
-// //             );
-// //           })}
-
-// //           {/* Loading Indicator */}
-// //           {isGenerating && (
-// //             <ChatBubble variant="received">
-// //               <ChatBubbleAvatar fallback="🤖" />
-// //               <ChatBubbleMessage isLoading />
-// //             </ChatBubble>
-// //           )}
-// //         </ChatMessageList>
-// //       </div>
-
-// //       {/* Chat Input Form */}
-// //       <div className="w-full px-4 pb-4">
-// //         <form
-// //           ref={formRef}
-// //           onSubmit={onSubmit}
-// //           className="relative rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring"
-// //         >
-// //           <ChatInput
-// //             value={input}
-// //             onKeyDown={onKeyDown}
-// //             onChange={handleInputChange}
-// //             placeholder="Type your message here..."
-// //             className="rounded-lg bg-background border-0 shadow-none focus-visible:ring-0"
-// //           />
-// //           <div className="flex items-center p-3 pt-0">
-// //             <Button variant="ghost" size="icon">
-// //               <Paperclip className="size-4" />
-// //               <span className="sr-only">Attach file</span>
-// //             </Button>
-
-// //             <Button variant="ghost" size="icon">
-// //               <Mic className="size-4" />
-// //               <span className="sr-only">Use Microphone</span>
-// //             </Button>
-
-// //             <Button
-// //               disabled={!input || isLoading}
-// //               type="submit"
-// //               size="sm"
-// //               className="ml-auto gap-1.5"
-// //             >
-// //               Send Message
-// //               <CornerDownLeft className="size-3.5" />
-// //             </Button>
-// //           </div>
-// //         </form>
-// //       </div>
-// //     </main>
-// //   );
-// // }

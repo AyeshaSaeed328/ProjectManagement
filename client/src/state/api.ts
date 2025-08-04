@@ -66,8 +66,10 @@ export interface Attachment {
   id: string;
   fileURL: string;
   fileName: string;
-  taskId: string;
+  taskId?: string;
   uploadedById: string;
+  messageId?: string;
+  message?: Message;
 }
 
 export interface Task {
@@ -133,13 +135,34 @@ export interface TaskAssignment {
 interface UpdateProjectInput extends Partial<Project> {
   teamIds?: string[];
 }
+export interface ChatInterface {
+  admin?: User;
+  adminId?: string;
+  createdAt: Date;
+  isGroupChat: boolean;
+  lastMessage?: Message;
+  name: string;
+  participants: User[];
+  updatedAt: Date;
+  id: string;
+}
+
+export interface Message {
+  id: string;
+  sender: Pick<User, "id" | "profilePicture" | "email" | "username">;
+  content: string;
+  chat: ChatInterface;
+  attachments: Attachment[];
+  createdAt: string;
+  updatedAt: string;
+}
 
 
 
 export const api = createApi({
   baseQuery: fetchBaseQueryWithReauth,
   reducerPath: "api",
-  tagTypes: ["Projects", "Tasks", "Users", "Teams", "Auth"],
+  tagTypes: ["Projects", "Tasks", "Users", "Teams", "Auth", "Messages", "Chats"],
   endpoints: (build) => ({
 
     registerUser: build.mutation<ApiResponse<{ user: User }>,
@@ -370,6 +393,16 @@ export const api = createApi({
     search: build.query<SearchResults, string>({
       query: (query) => `search?query=${query}`,
     }),
+
+    // Chat Module APIs
+
+    getAllChats: build.query<ApiResponse<ChatInterface[]>, void>({
+      query: () => "chats",
+      providesTags: ["Chats"],
+    }),
+
+
+
   }),
 });
 
@@ -403,4 +436,7 @@ export const {
   useGetTeamsQuery,
   useAssignTeamsToProjectsMutation,
   useGetUserTeamQuery,
+
+  // Chat Module APIs
+  useGetAllChatsQuery,
 } = api;
