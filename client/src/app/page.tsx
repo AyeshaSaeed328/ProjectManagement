@@ -5,6 +5,7 @@ import { attemptTokenRefresh } from "@/lib/auth";
 export default async function Home() {
   const cookieStore = await cookies();
     const accessToken = cookieStore.get("accessToken")?.value;
+    
   
     if (!accessToken) {
       const refreshed = await attemptTokenRefresh();
@@ -12,7 +13,7 @@ export default async function Home() {
         redirect("/login");
       }
       else{
-        redirect("/dashborad")
+        redirect("/dashboard")
       }
     }
 }

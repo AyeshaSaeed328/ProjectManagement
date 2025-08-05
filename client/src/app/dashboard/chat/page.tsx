@@ -15,6 +15,7 @@ import {
  } from '@/lib/utils';
  import { useAppSelector } from '@/app/redux';
  import { useGetAllChatsQuery } from '@/state/api';
+import AddChatModal from '@/(components)/AddChatModal';
  
 
 const CONNECTED_EVENT = "connected";
@@ -32,14 +33,14 @@ const MESSAGE_DELETE_EVENT = "messageDeleted";
 const Chat = () => {
   const { socket } = useSocket();
   const user = useAppSelector((state) => state.global.auth.user)
-  const {data:allChats, isLoading: chatsLoading, isError: chatsError} = useGetAllChatsQuery() 
+  const {data:allChats, isLoading: chatsLoading, isError: chatsError, refetch} = useGetAllChatsQuery() 
   console.log("chats", allChats)
   const currentChat = useRef<ChatInterface | null>(null);
 
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isConnected, setIsConnected] = useState(false); 
 
-  const [openAddChat, setOpenAddChat] = useState(false); 
+  const [openAddChat, setOpenAddChat] = useState(true); 
   const [loadingChats, setLoadingChats] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
 
@@ -114,7 +115,15 @@ const Chat = () => {
       <p>
         connected
       </p>}
-    
+       <AddChatModal
+        open={openAddChat}
+        onClose={() => {
+          setOpenAddChat(false);
+        }}
+        onSuccess={() => {
+          refetch();
+        }}
+      />
     </>
   )
 }

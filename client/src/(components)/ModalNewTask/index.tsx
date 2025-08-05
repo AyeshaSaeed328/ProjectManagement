@@ -57,7 +57,6 @@ const ModalNewTask = ({ isOpen, onClose, id, initialData }: Props) => {
     formState: { errors },
   } = useForm<FormData>();
 
-  // ✅ Prevent unnecessary resets
   const lastResetIdRef = useRef<string | null>(null);
 
   useEffect(() => {
