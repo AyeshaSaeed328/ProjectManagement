@@ -49,7 +49,8 @@ export function LoginForm() {
     }
 
     if (!user?.isEmailVerified) {
-      router.push("/verify-email");
+      // router.push("/verify-email");
+      router.push("/dashboard");
     } else {
       router.push("/dashboard");
     }

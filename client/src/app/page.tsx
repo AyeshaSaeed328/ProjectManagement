@@ -3,17 +3,6 @@ import { redirect } from "next/navigation";
 import { attemptTokenRefresh } from "@/lib/auth";
 
 export default async function Home() {
-  const cookieStore = await cookies();
-    const accessToken = cookieStore.get("accessToken")?.value;
-    
+  redirect("/dashboard")
   
-    if (!accessToken) {
-      const refreshed = await attemptTokenRefresh();
-      if (!refreshed) {
-        redirect("/login");
-      }
-      else{
-        redirect("/dashboard")
-      }
-    }
 }

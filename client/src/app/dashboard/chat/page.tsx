@@ -1,3 +1,17 @@
+// import React from 'react'
+// import ChatWindow from './chatWindow'
+
+// const ChatHome = () => {
+//   return (
+//     <ChatWindow />
+//   )
+// }
+
+// export default ChatHome
+
+
+
+
 'use client'
 
 import { useSocket } from '@/context/socket'
@@ -6,7 +20,6 @@ import {
   PaperClipIcon,
   XCircleIcon,
 } from "@heroicons/react/20/solid";
-import { useEffect, useRef, useState } from "react";
 import { ChatInterface, Message } from '@/state/api';
 import { 
   getChatObjectMetadata,
@@ -16,12 +29,35 @@ import {
  import { useAppSelector } from '@/app/redux';
  import { useGetAllChatsQuery } from '@/state/api';
 import AddChatModal from '@/(components)/AddChatModal';
+
+
+import {
+  ChatBubble,
+  ChatBubbleAction,
+  ChatBubbleAvatar,
+  ChatBubbleMessage,
+} from "@/components/ui/chat/chat-bubble";
+import { ChatInput } from "@/components/ui/chat/chat-input";
+import { ChatMessageList } from "@/components/ui/chat/chat-message-list";
+import { Button } from "@/components/ui/button";
+import {
+  CopyIcon,
+  CornerDownLeft,
+  Mic,
+  Paperclip,
+  RefreshCcw,
+  Send,
+  Volume2,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { GitHubLogoIcon } from "@radix-ui/react-icons";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import CodeDisplayBlock from "@/components/code-display-block";
  
 
-const CONNECTED_EVENT = "connected";
-const DISCONNECT_EVENT = "disconnect";
+
 const JOIN_CHAT_EVENT = "joinChat";
-const NEW_CHAT_EVENT = "newChat";
 const TYPING_EVENT = "typing";
 const STOP_TYPING_EVENT = "stopTyping";
 const MESSAGE_RECEIVED_EVENT = "messageReceived";
@@ -33,14 +69,12 @@ const MESSAGE_DELETE_EVENT = "messageDeleted";
 const Chat = () => {
   const { socket } = useSocket();
   const user = useAppSelector((state) => state.global.auth.user)
-  const {data:allChats, isLoading: chatsLoading, isError: chatsError, refetch} = useGetAllChatsQuery() 
-  console.log("chats", allChats)
+  
   const currentChat = useRef<ChatInterface | null>(null);
 
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isConnected, setIsConnected] = useState(false); 
 
-  const [openAddChat, setOpenAddChat] = useState(true); 
   const [loadingChats, setLoadingChats] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
 
@@ -58,13 +92,7 @@ const Chat = () => {
 
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
 
-  const onConnect = () => {
-    setIsConnected(true);
-  };
-
-  const onDisconnect = () => {
-    setIsConnected(false);
-  };
+  
 
  // This useEffect handles the setting up and tearing down of socket event listeners.
   useEffect(() => {
@@ -72,10 +100,7 @@ const Chat = () => {
     if (!socket) return;
 
     // Set up event listeners for various socket events:
-    // Listener for when the socket connects.
-    socket.on(CONNECTED_EVENT, onConnect);
-    // Listener for when the socket disconnects.
-    socket.on(DISCONNECT_EVENT, onDisconnect);
+    
     // Listener for when a user is typing.
     // socket.on(TYPING_EVENT, handleOnSocketTyping);
     // // Listener for when a user stops typing.
@@ -93,8 +118,7 @@ const Chat = () => {
     // When the component using this hook unmounts or if `socket` or `chats` change:
     return () => {
       // Remove all the event listeners we set up to avoid memory leaks and unintended behaviors.
-      socket.off(CONNECTED_EVENT, onConnect);
-      socket.off(DISCONNECT_EVENT, onDisconnect);
+      
       // socket.off(TYPING_EVENT, handleOnSocketTyping);
       // socket.off(STOP_TYPING_EVENT, handleOnSocketStopTyping);
       // socket.off(MESSAGE_RECEIVED_EVENT, onMessageReceived);
@@ -105,9 +129,7 @@ const Chat = () => {
     };
 
     
-  }, [socket, allChats]);
- if(chatsLoading) return <div>Loading...</div>
- if (chatsError) return <div>Error fetching chats</div>
+  }, [socket]);
   return (
     <>
     <div>Chat</div>
@@ -115,15 +137,8 @@ const Chat = () => {
       <p>
         connected
       </p>}
-       <AddChatModal
-        open={openAddChat}
-        onClose={() => {
-          setOpenAddChat(false);
-        }}
-        onSuccess={() => {
-          refetch();
-        }}
-      />
+       
+      {/* <button onClick={()=>{setOpenAddChat(true)}}>Show Add Group</button> */}
     </>
   )
 }

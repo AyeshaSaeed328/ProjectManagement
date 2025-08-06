@@ -1,4 +1,4 @@
-import { Dialog, Switch, Transition } from "@headlessui/react";
+// import { Dialog, Switch, Transition } from "@headlessui/react";
 import Modal from "../Modal";
 import {
     UserGroupIcon,
@@ -20,6 +20,9 @@ import { toast } from "sonner";
 import React, { useEffect, useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
 import Select from "react-select";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 
 type Props = {
     isOpen: boolean;
@@ -45,37 +48,43 @@ const AddChatModal = ({ isOpen, onClose, isGroupChat }: Props) => {
         register,
         handleSubmit,
         reset,
+        watch,
         formState: { errors },
-      } = useForm<FormData>();
+    } = useForm<FormData>({
+        defaultValues:{
+            isGroupChat: false
+        }
+    });
+    const isGroupChatValue = watch("isGroupChat");
+
 
     const onSubmit = async (data: FormData) => {
-        if (isGroupChat) {
-            await createNewGroupChat(data);
-        } else {
-            await createNewChat(data);
-        }
+       
+        await createNewGroupChat(data);
+        
         reset();
         onClose();
     };
 
-    const createNewChat = async (data: FormData) => {
-        try {
-            if (!data.selectedUser) return toast("Please select a user")
-            const newChat = await createOneChat(
-                {
-                    receiverId: data.selectedUser.value
-                }).unwrap();
-           
-            toast("Chat initiated successfully")
+    // const createNewChat = async (data: FormData) => {
+    //     try {
+    //         if (!data.selectedUser) return toast("Please select a user")
+    //         const newChat = await createOneChat(
+    //             {
+    //                 receiverId: data.selectedUser.value
+    //             }).unwrap();
 
-        } catch (error: any) {
-            const errorMessage = error?.data?.message || "Failed to create chat";
-            toast.error(errorMessage);
+    //         toast("Chat initiated successfully")
 
-        }
-    }
+    //     } catch (error: any) {
+    //         const errorMessage = error?.data?.message || "Failed to create chat";
+    //         toast.error(errorMessage);
 
-    const createNewGroupChat = async(data: FormData) =>{
+    //     }
+    // }
+    const userOptions = users.map((u) => ({ label: u.username, value: u.id }))
+
+    const createNewGroupChat = async (data: FormData) => {
         try {
             if (!data.groupName) return toast("Select a group name");
             if (data.groupParticipants.length < 2) return toast("Group must have minimum three participants");
@@ -85,23 +94,116 @@ const AddChatModal = ({ isOpen, onClose, isGroupChat }: Props) => {
             }).unwrap();
 
             toast("Group created successfully")
-            
+
         } catch (error: any) {
             const errorMessage = error?.data?.message || "Failed to create chat";
             toast.error(errorMessage);
-            
+
         }
 
     }
 
-    
+    const inputStyles =
+        "w-full rounded border border-gray-300 p-2 shadow-sm dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:focus:outline-none";
 
-    useEffect(() => {
-        // Check if the modal/dialog is not isOpen
-        if (!isOpen) return;
-    }, [isOpen]);
+    const selectStyles =
+        "mb-4 block w-full rounded border border-gray-300 px-3 py-2 dark:border-dark-tertiary dark:bg-dark-tertiary dark:text-white dark:focus:outline-none";
+
+
+
+
+    // useEffect(() => {
+    //     // Check if the modal/dialog is not isOpen
+    //     if (!isOpen) return;
+    // }, [isOpen]);
 
     return (
+        <Modal isOpen={isOpen} onClose={onClose} name="Create New Group" >
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" >
+               <div className="flex justify-center">
+    <div className="w-24 h-24 my-5 bg-gradient-to-br from-purple-600 to-indigo-500 rounded-full shadow-lg flex items-center justify-center">
+      <UserGroupIcon className="w-10 h-10 text-white" />
+    </div>
+  </div>
+
+
+                {/* <Controller
+                    control={control}
+                    name="isGroupChat"
+                    render={({ field }) => (
+                         <div className="flex items-center space-x-2">
+                            {/* <UserGroupIcon className="h-5 w-5 mr-2"/> */}
+                        {/* <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        <Label htmlFor="Group Chat">Group Chat</Label>
+                        </div> */}
+                {/* )}
+                /> */} 
+                <input className={inputStyles} placeholder="Enter Group Name" {...register("groupName", {required:true})}/>
+                <Controller
+          control={control}
+          name="groupParticipants"
+          render={({ field }) => (
+            <Select
+              {...field}
+              isMulti
+              options={userOptions}
+              placeholder="Assign users..."
+              classNamePrefix="react-select"
+              styles={{
+                control: (base, state) => ({
+                  ...base,
+                  backgroundColor: 'var(--select-bg)',
+                  borderColor: state.isFocused ? '#9333ea' : 'var(--select-border)',
+                  boxShadow: state.isFocused ? '0 0 0 1px #9333ea' : 'none',
+                  '&:hover': {
+                    borderColor: '#9333ea',
+                  },
+                }),
+                menu: (base) => ({
+                  ...base,
+                  backgroundColor: 'var(--select-bg)',
+                  zIndex: 50,
+                }),
+                option: (base, state) => ({
+                  ...base,
+                  backgroundColor: state.isSelected
+                    ? '#9333ea'
+                    : state.isFocused
+                    ? '#a855f7'
+                    : 'var(--select-bg)',
+                  color: state.isSelected || state.isFocused ? 'white' : 'var(--select-text)',
+                }),
+                multiValue: (base) => ({
+                  ...base,
+                  backgroundColor: '#9333ea',
+                }),
+                multiValueLabel: (base) => ({
+                  ...base,
+                  color: 'white',
+                }),
+                multiValueRemove: (base) => ({
+                  ...base,
+                  color: 'white',
+                  ':hover': {
+                    backgroundColor: '#7c3aed',
+                    color: 'white',
+                  },
+                }),
+              }}
+            />
+          )}
+            />
+            <button
+          type="submit"
+          disabled={isChatGroupLoading}
+          className="mt-4 w-full rounded bg-purple-600 px-4 py-2 text-white hover:bg-purple-700 disabled:opacity-50"
+        >
+          { isChatGroupLoading ? "Creating..." : "Create Group"}
+        </button>
+
+            </form>
+        </Modal>
 
 
     );
@@ -109,190 +211,3 @@ const AddChatModal = ({ isOpen, onClose, isGroupChat }: Props) => {
 
 export default AddChatModal;
 
-
-
-
-    //     <Transition.Root show={isOpen} as={Fragment}>
-    //         <Dialog as="div" className="relative z-10" onClose={handleClose}>
-    //             <Transition.Child
-    //                 as={Fragment}
-    //                 enter="ease-out duration-300"
-    //                 enterFrom="opacity-0"
-    //                 enterTo="opacity-100"
-    //                 leave="ease-in duration-200"
-    //                 leaveFrom="opacity-100"
-    //                 leaveTo="opacity-0"
-    //             >
-    //                 <div className="fixed inset-0 bg-black/50 bg-opacity-75 transition-opacity" />
-    //             </Transition.Child>
-
-    //             <div className="fixed inset-0 z-10 overflow-y-visible">
-    //                 <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-    //                     <Transition.Child
-    //                         as={Fragment}
-    //                         enter="ease-out duration-300"
-    //                         enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-    //                         enterTo="opacity-100 translate-y-0 sm:scale-100"
-    //                         leave="ease-in duration-200"
-    //                         leaveFrom="opacity-100 translate-y-0 sm:scale-100"
-    //                         leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-    //                     >
-    //                         <Dialog.Panel
-    //                             className="relative transform overflow-x-hidden rounded-lg bg-dark px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-3xl sm:p-6"
-    //                             style={{
-    //                                 overflow: "inherit",
-    //                             }}
-    //                         >
-    //                             <div>
-    //                                 <div className="flex justify-between items-center">
-    //                                     <Dialog.Title
-    //                                         as="h3"
-    //                                         className="text-lg font-semibold leading-6 text-white"
-    //                                     >
-    //                                         Create chat
-    //                                     </Dialog.Title>
-    //                                     <button
-    //                                         type="button"
-    //                                         className="rounded-md bg-transparent text-zinc-400 hover:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-white focus:ring-offset-2"
-    //                                         onClick={() => handleClose()}
-    //                                     >
-    //                                         <span className="sr-only">Close</span>
-    //                                         <XMarkIcon className="h-6 w-6" aria-hidden="true" />
-    //                                     </button>
-    //                                 </div>
-    //                             </div>
-    //                             <div>
-    //                                 <Switch.Group as="div" className="flex items-center my-5">
-    //                                     <Switch
-    //                                         checked={isGroupChat}
-    //                                         onChange={setIsGroupChat}
-    //                                         className={classNames(
-    //                                             isGroupChat ? "bg-secondary" : "bg-zinc-200",
-    //                                             "relative outline outline-[1px] outline-white inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:ring-0"
-    //                                         )}
-    //                                     >
-    //                                         <span
-    //                                             aria-hidden="true"
-    //                                             className={classNames(
-    //                                                 isGroupChat
-    //                                                     ? "translate-x-5 bg-success"
-    //                                                     : "translate-x-0 bg-white",
-    //                                                 "pointer-events-none inline-block h-5 w-5 transform rounded-full shadow ring-0 transition duration-200 ease-in-out"
-    //                                             )}
-    //                                         />
-    //                                     </Switch>
-    //                                     <Switch.Label as="span" className="ml-3 text-sm">
-    //                                         <span
-    //                                             className={classNames(
-    //                                                 "font-medium text-white",
-    //                                                 isGroupChat ? "" : "opacity-40"
-    //                                             )}
-    //                                         >
-    //                                             Is it a group chat?
-    //                                         </span>{" "}
-    //                                     </Switch.Label>
-    //                                 </Switch.Group>
-    //                                 {isGroupChat ? (
-    //                                     <div className="my-5">
-    //                                         <Input
-    //                                             placeholder={"Enter a group name..."}
-    //                                             value={groupName}
-    //                                             onChange={(e) => {
-    //                                                 setGroupName(e.target.value);
-    //                                             }}
-    //                                         />
-    //                                     </div>
-    //                                 ) : null}
-    //                                 <div className="my-5">
-    //                                     <Select
-    //                                         placeholder={
-    //                                             isGroupChat
-    //                                                 ? "Select group participants..."
-    //                                                 : "Select a user to chat..."
-    //                                         }
-    //                                         value={isGroupChat ? "" : selectedUserId || ""}
-    //                                         options={users.map((user: User) => {
-    //                                             return {
-    //                                                 label: user.username,
-    //                                                 value: user.id,
-    //                                             };
-    //                                         })}
-    //                                         onChange={({ value }: { value: string }) => {
-    //                                             if (isGroupChat && !groupParticipants.includes(value)) {
-    //                                                 // if user is creating a group chat track the participants in an array
-    //                                                 setGroupParticipants([...groupParticipants, value]);
-    //                                             } else {
-    //                                                 setSelectedUserId(value);
-    //                                                 // if user is creating normal chat just get a single user
-    //                                             }
-    //                                         }}
-    //                                     />
-    //                                 </div>
-    //                                 {isGroupChat ? (
-    //                                     <div className="my-5">
-    //                                         <span
-    //                                             className={classNames(
-    //                                                 "font-medium text-white inline-flex items-center"
-    //                                             )}
-    //                                         >
-    //                                             <UserGroupIcon className="h-5 w-5 mr-2" /> Selected
-    //                                             participants
-    //                                         </span>{" "}
-    //                                         <div className="flex justify-start items-center flex-wrap gap-2 mt-3">
-    //                                             {users
-    //                                                 .filter((user:User) =>
-    //                                                     groupParticipants.includes(user.id)
-    //                                                 )
-    //                                                 ?.map((participant) => {
-    //                                                     return (
-    //                                                         <div
-    //                                                             className="inline-flex bg-secondary rounded-full p-2 border-[1px] border-zinc-400 items-center gap-2"
-    //                                                             key={participant?.id}
-    //                                                         >
-    //                                                             <img
-    //                                                                 className="h-6 w-6 rounded-full object-cover"
-    //                                                                 src={participant.profilePicture}
-    //                                                             />
-    //                                                             <p className="text-white">
-    //                                                                 {participant.username}
-    //                                                             </p>
-    //                                                             <XCircleIcon
-    //                                                                 role="button"
-    //                                                                 className="w-6 h-6 hover:text-primary cursor-pointer"
-    //                                                                 onClick={() => {
-    //                                                                     setGroupParticipants(
-    //                                                                         groupParticipants.filter(
-    //                                                                             (p) => p !== participant.id
-    //                                                                         )
-    //                                                                     );
-    //                                                                 }}
-    //                                                             />
-    //                                                         </div>
-    //                                                     );
-    //                                                 })}
-    //                                         </div>
-    //                                     </div>
-    //                                 ) : null}
-    //                             </div>
-    //                             <div className="mt-5 flex justify-between items-center gap-4">
-    //                                 <Button
-    //                                     disabled={creatingChat}
-    //                                     onClick={handleClose}
-    //                                     className="w-1/2"
-    //                                 >
-    //                                     Close
-    //                                 </Button>
-    //                                 <Button
-    //                                     disabled={creatingChat}
-    //                                     onClick={isGroupChat ? createNewGroupChat : createNewChat}
-    //                                     className="w-1/2"
-    //                                 >
-    //                                     Create
-    //                                 </Button>
-    //                             </div>
-    //                         </Dialog.Panel>
-    //                     </Transition.Child>
-    //                 </div>
-    //             </div>
-    //         </Dialog>
-    //     </Transition.Root>

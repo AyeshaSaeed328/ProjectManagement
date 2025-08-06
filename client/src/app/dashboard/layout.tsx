@@ -11,16 +11,19 @@ export default async function ProtectedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get("accessToken")?.value;
-  // console.log("cookie", accessToken)
+  // const cookieStore = await cookies();
+  // const accessToken = cookieStore.get("accessToken")?.value;
+  // // console.log("cookie", accessToken)
 
-  if (!accessToken) {
-    const refreshed = await attemptTokenRefresh();
-    if (!refreshed) {
-      redirect("/login");
-    }
-  }
+  // if (!accessToken) {
+  //   const refreshed = await attemptTokenRefresh();
+  //   if (!refreshed) {
+  //     redirect("/login");
+  //   }
+  //   else{
+  //     redirect("/dashboard")
+  //   }
+  // }
 
   return <SocketProvider><DashboardWrapper>{children}</DashboardWrapper></SocketProvider>;
 }
