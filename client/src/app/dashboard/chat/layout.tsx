@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useGetAllChatsQuery } from "@/state/api";
 
 export default function ChatLayout() {
-  const { data, isLoading } = useGetAllChatsQuery();
+  const { data, isLoading, refetch } = useGetAllChatsQuery();
   const chats = data?.data || [];
 
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
@@ -19,6 +19,7 @@ export default function ChatLayout() {
         chats={chats}
         selectedChatId={selectedChatId || ""}
         onSelectChat={setSelectedChatId}
+        refetchChats={refetch}
       />
       <ChatWindow selectedChat={selectedChat}/>
     </div>

@@ -4,12 +4,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { ChatInterface, useGetAllChatsQuery, useGetAllUsersQuery, User } from "@/state/api";
+import { ChatInterface, useGetAllUsersQuery, User, useCreateOneOnOneChatMutation } from "@/state/api";
 import { UserGroupIcon } from "@heroicons/react/24/solid";
 import { useSocket } from '@/context/socket'
 import { useEffect, useState } from "react";
 import AddChatModal from "@/(components)/AddChatModal";
 import { Search } from "lucide-react";
+import { useAppSelector } from "@/app/redux";
 
 
 
@@ -62,6 +63,7 @@ interface ChatListProps {
   chats: ChatInterface[];
   selectedChatId?: string;
   onSelectChat: (chatId: string) => void;
+  refetchChats: ()=> void
 }
 
 
@@ -69,22 +71,45 @@ const ChatList: React.FC<ChatListProps> = ({
   chats,
   selectedChatId,
   onSelectChat,
+  refetchChats
 }) => {
   const { socket } = useSocket();
 
   const {data:allUsers, isLoading: usersLoading, isError: userssError} = useGetAllUsersQuery() 
+  const [createOneChat, { isLoading: isChatOneLoading }] = useCreateOneOnOneChatMutation();
+  
   const [openAddChat, setOpenAddChat] = useState(true); 
   const [searchTerm, setSearchTerm] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User| null>(null)
+  const currentUserId = useAppSelector((state) => state.global.auth.user?.id);
+
   
     const onNewChat = (chat: ChatInterface) => {
+      
+      setSearchTerm("")
+      setShowSuggestions(false)
+      setSelectedUser(null)
+      refetchChats();
     
   };
 
+  const createNewChatWithUser = async (user: User) => {
+  try {
+    await createOneChat({ receiverId: user.id }).unwrap();
+  } catch (error: any) {
+    console.error("Error creating chat:", error);
+  }
+};
+
+
   const filteredChats = chats.filter((chat) => {
-    const otherUser = chat.participants[0];
-    const name = chat.name || otherUser.username;
-    return name.toLowerCase().includes(searchTerm.toLowerCase());
+    const otherUser = chat.participants.find(p => p.id !== currentUserId);;
+    const name = chat.isGroupChat
+    ? chat.name
+    : otherUser?.username || "";
+
+    return name?.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   const suggestedUsers =
@@ -143,8 +168,10 @@ const ChatList: React.FC<ChatListProps> = ({
                   onClick={() => {
                     // Optionally start a chat with this user here
                     console.log("Suggested user clicked:", user);
+                    setSelectedUser(user)
                     setSearchTerm(user.username);
                     setShowSuggestions(false);
+                    createNewChatWithUser(user);
                   }}
                 >
                   {user.username}
@@ -163,13 +190,13 @@ const ChatList: React.FC<ChatListProps> = ({
         {chats.length === 0 ? (
           <p className="p-4 text-muted-foreground">No chats yet</p>
         ) : (
-          filteredChats.map((chat) => {
-            const otherUser = chat.participants[0]; // adjust if it's a group
+            filteredChats.map((chat) => {
+  const otherUser = chat.participants.find(p => p.id !== currentUserId);
             return (
               <ChatListItem
                 key={chat.id}
                 id={chat.id}
-                name={chat.name || otherUser.username}
+                name={chat.isGroupChat ? chat.name : otherUser?.username || "Unknown"}
                 lastMessage={chat.lastMessage?.content || ""}
                 profilePic={otherUser?.profilePicture}
                 updatedAt={chat.updatedAt.toString()}

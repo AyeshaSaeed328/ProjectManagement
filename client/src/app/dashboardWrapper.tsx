@@ -35,6 +35,7 @@ const {
   isError: isProjectsError,
 } = useGetProjectsQuery(undefined, {
   skip: isLoading || !isAuthenticated, // only runs when ready
+  refetchOnMountOrArgChange: true,
 });
 
 if (isProjectsLoading) return <div>Loading...</div>;

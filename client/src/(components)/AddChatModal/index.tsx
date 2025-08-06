@@ -40,7 +40,6 @@ const AddChatModal = ({ isOpen, onClose, isGroupChat }: Props) => {
 
     const { data: res, isLoading: isUsersLoading, isError: isUsersError } = useGetAllUsersQuery();
     const users = res?.data || []
-    const [createOneChat, { isLoading: isChatOneLoading }] = useCreateOneOnOneChatMutation();
     const [createGroupChat, { isLoading: isChatGroupLoading }] = useCreateGroupChatMutation();
 
     const {
