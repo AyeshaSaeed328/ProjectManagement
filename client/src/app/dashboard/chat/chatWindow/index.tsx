@@ -100,27 +100,28 @@ export default function ChatWindow({ selectedChat }: ChatWindowProps) {
   }}
   className="border-t px-4 py-3 flex gap-2 items-end"
 >
-  <div className="relative w-full">
-  <ChatInput
-    placeholder="Type your message..."
-    value={message}
-    onChange={(e) => setMessage(e.target.value)}
-    ref={inputRef}
-    className="pr-20" // add padding to make space for icons
-  />
-  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-2">
-    <label htmlFor="file-upload" className="cursor-pointer">
-      <Paperclip className="w-4 h-4 text-muted-foreground hover:text-foreground" />
-    </label>
-    <input id="file-upload" type="file" hidden  />
+  <div className="flex flex-col w-full gap-1">
+    {/* Chat Input */}
+    <ChatInput
+      placeholder="Type your message..."
+      value={message}
+      onChange={(e) => setMessage(e.target.value)}
+      ref={inputRef}
+    />
 
-    <label htmlFor="image-upload" className="cursor-pointer">
-      <Image className="w-4 h-4 text-muted-foreground hover:text-foreground" />
-    </label>
-    <input id="image-upload" type="file" accept="image/*" hidden />
+    {/* Icons Below Input */}
+    <div className="flex gap-3 pl-2">
+      <label htmlFor="file-upload" className="cursor-pointer">
+        <Paperclip className="w-5 h-5 text-muted-foreground hover:text-foreground" />
+      </label>
+      <input id="file-upload" type="file" hidden />
+
+      <label htmlFor="image-upload" className="cursor-pointer">
+        <Image className="w-5 h-5 text-muted-foreground hover:text-foreground" />
+      </label>
+      <input id="image-upload" type="file" accept="image/*" hidden />
+    </div>
   </div>
-</div>
-
 
   {/* Send Button */}
   <Button type="submit" size="icon" disabled={!message.trim()}>
