@@ -46,7 +46,7 @@ const ChatListItem: React.FC<ChatListItemProps> = ({
       <AvatarFallback>{name[0]}</AvatarFallback>
     </Avatar>
     <div className="flex-1 min-w-0">
-      <p className="font-medium truncate">{name}</p>
+      <p className="font-medium truncate dark:text-white">{name}</p>
       <p className="text-sm text-muted-foreground truncate">
         {lastMessage || "No messages yet"}
       </p>
@@ -132,7 +132,7 @@ const ChatList: React.FC<ChatListProps> = ({
 
         {/* User Suggestions */}
         {showSuggestions && searchTerm && (
-          <div className="mt-2 bg-white border rounded shadow dark:bg-gray-800 max-h-40 overflow-y-auto">
+          <div className="mt-2 bg-white border rounded shadow dark:bg-gray-800 dark:text-white max-h-40 overflow-y-auto">
             {suggestedUsers.length === 0 ? (
               <div className="p-2 text-sm text-muted-foreground">No users found</div>
             ) : (
@@ -163,7 +163,7 @@ const ChatList: React.FC<ChatListProps> = ({
         {chats.length === 0 ? (
           <p className="p-4 text-muted-foreground">No chats yet</p>
         ) : (
-          chats.map((chat) => {
+          filteredChats.map((chat) => {
             const otherUser = chat.participants[0]; // adjust if it's a group
             return (
               <ChatListItem
