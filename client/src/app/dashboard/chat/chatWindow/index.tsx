@@ -16,6 +16,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { ChatInterface, Message, useLazyGetMessagesByChatQuery, useSendMessageMutation } from "@/state/api";
 import { useAppSelector } from "@/app/redux";
 import { useSocket } from "@/context/socket";
+import MessageLoading from "@/components/ui/chat/message-loading";
 
 interface ChatWindowProps {
   selectedChat: ChatInterface | null;
@@ -61,6 +62,8 @@ const [sendMessage, { isLoading:sendMessageLoading, error }] = useSendMessageMut
 
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
 
+
+
   
  const getMessages = async () => {
     // Check if socket is available, if not, show an alert
@@ -98,7 +101,7 @@ try {
     }).unwrap();
     setMessage(""); // Clear the message input
         setAttachedFiles([]); // Clear the list of attached files
-        setMessages((prev) => [res.data, ...prev]); // Update messages in the UI
+        setMessages((prev) => [ ...prev,res.data]); // Update messages in the UI
         updateChatLastMessage(selectedChat.id || "", res.data); 
 
     console.log("✅ Message sent:", res);
@@ -114,7 +117,7 @@ try {
       setUnreadMessages((prev) => [message, ...prev]);
     } else {
       // If it belongs to the current chat, update the messages list for the active chat
-      setMessages((prev) => [message, ...prev]);
+      setMessages((prev) => [ ...prev,message]);
     }
 
     // Update the last message for the chat to which the received message belongs
@@ -176,17 +179,6 @@ try {
   },[selectedChat])
 
 
-  const handleSend = () => {
-    if (!message.trim()) return;
-
-    // Send message logic here...
-    console.log("Sending message:", message);
-    setMessage("");
-
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 100);
-  };
 
   useEffect(()=>{
       if (selectedChat) {
@@ -204,7 +196,7 @@ try {
   useEffect(() => {
   if (!socket) return;
 
-  console.log("mounting");
+  // console.log("mounting");
   socket.on(TYPING_EVENT, handleOnSocketTyping);
   socket.on(STOP_TYPING_EVENT, handleOnSocketStopTyping);
   socket.on(MESSAGE_RECEIVED_EVENT, onMessageReceived);
@@ -231,17 +223,17 @@ try {
       <div className="px-4 py-3 border-b bg-muted flex items-center gap-2 dark:bg-dark-secondary">
         <ChatBubbleAvatar
           src={selectedChat.participants[0]?.profilePicture}
-          fallback={selectedChat.participants[0]?.username|| "?"}
+          fallback={selectedChat.participants[0]?.username || "?"}
           className="w-8 h-8"
         />
-        <div className="text-sm font-medium">{selectedChat.isGroupChat
-        ? selectedChat.name 
-        : selectedChat.participants.find((p) => p.id !== currentUserId)?.username || "Unknown User"}
+        <div className="text-sm font-medium">
+          {selectedChat.isGroupChat
+            ? selectedChat.name
+            : selectedChat.participants.find((p) => p.id !== currentUserId)?.username || "Unknown User"}
         </div>
       </div>
 
-      
-      <ChatMessageList className="flex-1">
+      <ChatMessageList>
         {messages?.map((msg) => {
           const isSent = msg.sender.id === currentUserId;
           return (
@@ -265,13 +257,32 @@ try {
             </ChatBubble>
           );
         })}
+        {isTyping && (
+          <div className="px-4 py-2 flex items-center gap-2">
+            <ChatBubble variant="received">
+              <ChatBubbleAvatar
+          src={selectedChat.participants.find((p) => p.id !== currentUserId)?.profilePicture}
+          fallback={
+            selectedChat.participants.find((p) => p.id !== currentUserId)?.username?.[0] || "?"
+          }
+          className="w-6 h-6"
+        />
+        <div>
+          <ChatBubbleMessage variant="received">
+            <MessageLoading />
+          </ChatBubbleMessage>
+        </div>
+      </ChatBubble>
+    </div>
+  )}
       </ChatMessageList>
+      
 
       {/* Input */}
       <form
   onSubmit={(e) => {
     e.preventDefault();
-    handleSend();
+   
   }}
   className="border-t px-4 py-3 flex gap-2 items-end"
 >

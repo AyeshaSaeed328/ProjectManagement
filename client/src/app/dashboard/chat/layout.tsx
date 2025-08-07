@@ -48,12 +48,12 @@ const updateChatLastMessage = (
 
   return (
     <div className="flex h-full w-full overflow-hidden">
-      <ChatList
+       <ChatList
         chats={chats}
         selectedChat={selectedChat || undefined}
         onSelectChat={setSelectedChat}
         refetchChats={refetch}
-      />
+      /> 
       <ChatWindow
   selectedChat={selectedChat}
   updateChatLastMessage={updateChatLastMessage}
