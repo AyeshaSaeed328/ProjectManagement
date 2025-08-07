@@ -37,19 +37,21 @@ const updateChatLastMessage = (
 
   setChats(sortedChats);
 };
-console.log("chats", chats)
 
 
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
 
-  const selectedChat = chats.find((chat) => chat.id === selectedChatId) || null;
+
+  const [selectedChat, setSelectedChat] = useState<ChatInterface | null>(null);
+
+  
+
 
   return (
     <div className="flex h-full w-full overflow-hidden">
       <ChatList
         chats={chats}
-        selectedChatId={selectedChatId || ""}
-        onSelectChat={setSelectedChatId}
+        selectedChat={selectedChat || undefined}
+        onSelectChat={setSelectedChat}
         refetchChats={refetch}
       />
       <ChatWindow

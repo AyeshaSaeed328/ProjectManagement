@@ -348,6 +348,9 @@ const getUserChats = asyncHandler(
         participants: {
           some: { id: userId },
         },
+        lastMessageId: {
+      not: null,
+    },
       },
       include: chatCommonInclude,
       orderBy: {

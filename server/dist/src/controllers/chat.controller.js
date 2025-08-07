@@ -245,6 +245,9 @@ const getUserChats = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0,
             participants: {
                 some: { id: userId },
             },
+            lastMessageId: {
+                not: null,
+            },
         },
         include: chatCommonInclude,
         orderBy: {

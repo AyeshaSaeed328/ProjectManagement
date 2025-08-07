@@ -61,15 +61,15 @@ const ChatListItem: React.FC<ChatListItemProps> = ({
 
 interface ChatListProps {
   chats: ChatInterface[];
-  selectedChatId?: string;
-  onSelectChat: (chatId: string) => void;
+  selectedChat?: ChatInterface;
+  onSelectChat: (chat: ChatInterface) => void;
   refetchChats: ()=> void
 }
 
 
 const ChatList: React.FC<ChatListProps> = ({
   chats,
-  selectedChatId,
+  selectedChat,
   onSelectChat,
   refetchChats
 }) => {
@@ -79,6 +79,7 @@ const ChatList: React.FC<ChatListProps> = ({
   const [createOneChat, { isLoading: isChatOneLoading }] = useCreateOneOnOneChatMutation();
   
   const [openAddChat, setOpenAddChat] = useState(false); 
+
   const [searchTerm, setSearchTerm] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User| null>(null)
@@ -96,7 +97,9 @@ const ChatList: React.FC<ChatListProps> = ({
 
   const createNewChatWithUser = async (user: User) => {
   try {
-    await createOneChat({ receiverId: user.id }).unwrap();
+    const chat = await createOneChat({ receiverId: user.id }).unwrap();
+    console.log(chat)
+    onSelectChat(chat.data)
   } catch (error: any) {
     console.error("Error creating chat:", error);
   }
@@ -172,7 +175,7 @@ const ChatList: React.FC<ChatListProps> = ({
                     setSearchTerm(user.username);
                     setShowSuggestions(false);
                     createNewChatWithUser(user);
-                    onSelectChat(user.id)
+
                     
                   }}
                 >
@@ -202,8 +205,8 @@ const ChatList: React.FC<ChatListProps> = ({
                 lastMessage={chat.lastMessage?.content || ""}
                 profilePic={otherUser?.profilePicture}
                 updatedAt={chat.updatedAt.toString()}
-                selected={selectedChatId === chat.id}
-                onClick={() => onSelectChat(chat.id)}
+                selected={selectedChat === chat}
+                onClick={() => onSelectChat(chat)}
               />
             );
           })
