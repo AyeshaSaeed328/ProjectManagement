@@ -145,6 +145,7 @@ export interface ChatInterface {
   participants: User[];
   updatedAt: Date;
   id: string;
+  messages?: Message[];
 }
 
 export interface Message {
@@ -153,8 +154,8 @@ export interface Message {
   content: string;
   chat: ChatInterface;
   attachments: Attachment[];
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 
@@ -420,6 +421,32 @@ export const api = createApi({
       providesTags: ["Users"],
     }),
 
+    getMessagesByChat: build.query<ApiResponse<Message[]>, string>({
+      query: (chatId) => `messages/${chatId}`,
+      providesTags: (result) =>
+        result?.data
+          ? result.data.map((message) => ({ type: "Messages", id: message.id }))
+          : [{ type: "Messages" }],
+    }),
+    sendMessage: build.mutation<ApiResponse<Message>, { chatId: string; content: string; attachments?: File[] }>({
+      query: ({ chatId, content, attachments }) => {
+        const formData = new FormData();
+        formData.append("content", content);
+        attachments?.forEach((file: File) => {
+          formData.append("attachments", file);
+        });
+
+        return {
+          url: `/messages/${chatId}`,
+          method: "POST",
+          body: formData,
+        };
+      },
+      invalidatesTags: ["Messages"], 
+    }),
+
+
+
   }),
 });
 
@@ -459,4 +486,7 @@ export const {
   useCreateOneOnOneChatMutation,
   useCreateGroupChatMutation,
   useGetAllUsersQuery,
+  useLazyGetMessagesByChatQuery,
+  useSendMessageMutation,
+
 } = api;

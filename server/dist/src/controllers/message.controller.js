@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteMessage = exports.getAllMessages = exports.sendMessage = void 0;
+exports.getEveryMessage = exports.deleteMessage = exports.getAllMessages = exports.sendMessage = void 0;
 const asyncHandler_1 = __importDefault(require("../utils/asyncHandler"));
 const ApiError_1 = require("../utils/ApiError");
 const ApiResponse_1 = require("../utils/ApiResponse");
@@ -148,7 +148,7 @@ const getAllMessages = (0, asyncHandler_1.default)((req, res) => __awaiter(void 
     }
     const messages = yield prisma.message.findMany({
         where: { chatId },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: "asc" },
         include: messageCommonInclude,
     });
     return res.status(200).json(new ApiResponse_1.ApiResponse(200, messages, "Messages retrieved successfully"));
@@ -203,10 +203,18 @@ const deleteMessage = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0
     message.chat.participants.forEach((participant) => {
         if (participant.id.toString() === userId)
             return;
-        (0, socket_1.emitSocketEvent)(req, participant.id, constants_1.ChatEventEnum.MESSAGE_RECEIVED_EVENT, message);
+        (0, socket_1.emitSocketEvent)(req, participant.id, constants_1.ChatEventEnum.MESSAGE_DELETE_EVENT, message);
     });
     return res
         .status(201)
         .json(new ApiResponse_1.ApiResponse(201, message, "Message saved successfully"));
 }));
 exports.deleteMessage = deleteMessage;
+const getEveryMessage = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const messages = yield prisma.message.findMany({
+        orderBy: { createdAt: "desc" },
+        include: messageCommonInclude,
+    });
+    return res.status(200).json(new ApiResponse_1.ApiResponse(200, messages, "Messages retrieved successfully"));
+}));
+exports.getEveryMessage = getEveryMessage;

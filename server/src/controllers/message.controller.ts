@@ -171,7 +171,7 @@ const getAllMessages = asyncHandler(
 
     const messages = await prisma.message.findMany({
       where: { chatId },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: "asc" },
       include: messageCommonInclude,
     });
 
@@ -235,7 +235,7 @@ const deleteMessage = asyncHandler(
             emitSocketEvent(
                 req,
                 participant.id,
-                ChatEventEnum.MESSAGE_RECEIVED_EVENT,
+                ChatEventEnum.MESSAGE_DELETE_EVENT,
                 message
             );
         });
@@ -246,8 +246,22 @@ const deleteMessage = asyncHandler(
     }
 );
 
+const getEveryMessage = asyncHandler(
+  async (req: Request, res: Response): Promise<Response<ApiResponse<MessageWithDetails[]
+  >>> => {
+   
+
+    const messages = await prisma.message.findMany({
+      orderBy: { createdAt: "desc" },
+      include: messageCommonInclude,
+    });
+
+    return res.status(200).json(new ApiResponse(200, messages, "Messages retrieved successfully"));
+  });
+
 export { 
     sendMessage,
     getAllMessages,
-    deleteMessage
+    deleteMessage,
+    getEveryMessage
 };

@@ -286,7 +286,7 @@ const NavItem = ({ href, icon: Icon, label }: NavItemProps) => {
   return (
     <Link href={href} className="w-full">
       <div
-        className={`relative flex cursor-pointer items-center gap-3 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${isActive ? "bg-gray-50 text-white dark:bg-gray-600" : ""
+        className={`relative flex cursor-pointer items-center gap-3 transition-colors hover:bg-gray-100 dark:hover:bg-dark-tertiary ${isActive ? "bg-gray-50 text-white dark:bg-dark-secondary" : ""
           } justify-start px-8 py-3`}
       >
         {isActive && (

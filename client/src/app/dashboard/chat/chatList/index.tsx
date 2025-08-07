@@ -39,7 +39,7 @@ const ChatListItem: React.FC<ChatListItemProps> = ({
     onClick={onClick}
     className={cn(
       "flex items-center gap-3 p-4 cursor-pointer transition-colors",
-      selected ? "bg-muted" : "hover:bg-accent"
+      selected ? "bg-muted dark:bg-dark-secondary" : "hover:bg-accent hover:dark:bg-dark-tertiary"
     )}
   >
     <Avatar>
@@ -78,7 +78,7 @@ const ChatList: React.FC<ChatListProps> = ({
   const {data:allUsers, isLoading: usersLoading, isError: userssError} = useGetAllUsersQuery() 
   const [createOneChat, { isLoading: isChatOneLoading }] = useCreateOneOnOneChatMutation();
   
-  const [openAddChat, setOpenAddChat] = useState(true); 
+  const [openAddChat, setOpenAddChat] = useState(false); 
   const [searchTerm, setSearchTerm] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User| null>(null)
@@ -90,7 +90,7 @@ const ChatList: React.FC<ChatListProps> = ({
       setSearchTerm("")
       setShowSuggestions(false)
       setSelectedUser(null)
-      refetchChats();
+      // refetchChats();
     
   };
 
@@ -133,7 +133,7 @@ const ChatList: React.FC<ChatListProps> = ({
       
     }, [socket]);
   return (
-    <aside className="relative w-full sm:w-80 h-full border-r">
+    <aside className="relative w-full sm:w-80 h-full border-r bg-white dark:bg-dark-bg">
       <AddChatModal
         isOpen={openAddChat}
         onClose={() => {
@@ -151,20 +151,20 @@ const ChatList: React.FC<ChatListProps> = ({
               setSearchTerm(e.target.value);
               setShowSuggestions(e.target.value.length > 0);
             }}
-            className="w-full rounded-md bg-gray-100 p-2 pl-9 text-sm text-gray-800 placeholder-gray-500 focus:outline-none dark:bg-gray-700 dark:text-white dark:placeholder-white"
+            className="w-full rounded-md bg-gray-100 p-2 pl-9 text-sm text-gray-800 placeholder-gray-500 focus:outline-none dark:bg-dark-secondary dark:text-white dark:placeholder-white"
           />
         </div>
 
         {/* User Suggestions */}
         {showSuggestions && searchTerm && (
-          <div className="mt-2 bg-white border rounded shadow dark:bg-gray-800 dark:text-white max-h-40 overflow-y-auto">
+          <div className="mt-2 bg-white border rounded shadow dark:bg-dark-bg dark:text-white max-h-40 overflow-y-auto">
             {suggestedUsers.length === 0 ? (
               <div className="p-2 text-sm text-muted-foreground">No users found</div>
             ) : (
               suggestedUsers.map((user) => (
                 <div
                   key={user.id}
-                  className="p-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                  className="p-2 text-sm hover:bg-gray-100 dark:hover:bg-dark-bg cursor-pointer"
                   onClick={() => {
                     // Optionally start a chat with this user here
                     console.log("Suggested user clicked:", user);
@@ -172,6 +172,8 @@ const ChatList: React.FC<ChatListProps> = ({
                     setSearchTerm(user.username);
                     setShowSuggestions(false);
                     createNewChatWithUser(user);
+                    onSelectChat(user.id)
+                    
                   }}
                 >
                   {user.username}
