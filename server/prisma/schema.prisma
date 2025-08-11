@@ -144,6 +144,7 @@ model Attachment {
   fileType   String // e.g., image/png, application/pdf
   url        String // Public URL or local path
   size       Int? // File size in bytes
+  public_id  String?
   message    Message?  @relation(fields: [messageId], references: [id])
   messageId  String?
   uploadedAt DateTime @default(now())
@@ -164,7 +165,7 @@ model Chat {
   adminId       String?
   lastMessage   Message?  @relation("LastMessage", fields: [lastMessageId], references: [id]) 
   lastMessageId String?   @unique
-  lastMessageAt  DateTime @default(now())
+  lastMessageAt  DateTime?  @default(now())
   messages      Message[] @relation("ChatMessages")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

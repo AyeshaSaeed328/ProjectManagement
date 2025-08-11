@@ -5,32 +5,43 @@ import {
   ChatBubbleAvatar,
   ChatBubbleMessage,
   ChatBubbleTimestamp,
+  ChatBubbleAction,
+  ChatBubbleActionWrapper,
 } from "@/components/ui/chat/chat-bubble";
 
 import { ChatInput } from "@/components/ui/chat/chat-input";
 import { ChatMessageList } from "@/components/ui/chat/chat-message-list";
 import { Button } from "@/components/ui/button";
 
-import { SendHorizonal, Paperclip, Image, EllipsisVerticalIcon } from "lucide-react";
+import { SendHorizonal, Paperclip, Image, X, MoreVertical } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { ChatInterface, Message, useLazyGetMessagesByChatQuery, useSendMessageMutation } from "@/state/api";
+import { 
+  ChatInterface,
+  Message,
+  useLazyGetMessagesByChatQuery, 
+  useSendMessageMutation, 
+  useDeleteMessageMutation } from "@/state/api";
 import { useAppSelector } from "@/app/redux";
 import { useSocket } from "@/context/socket";
 import MessageLoading from "@/components/ui/chat/message-loading";
 import {GroupChatDropdown} from "@/(components)/GroupChatDropdowm";
 import { Progress } from "@/components/ui/progress";
+import { ChatAttachments } from "@/components/ui/chat/chat-attachments";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 interface ChatWindowProps {
   selectedChat: ChatInterface | null;
   updateChatLastMessage: (chatId: string, message: Message) => void;
+  updateChatLastMessageOnDeletion: (chatId: string, message: Message) => void;
   onOpenGroupDetails: (chat: ChatInterface) => void;
   onExitGroupClick?: (chat: ChatInterface) => void;
 }
-interface UploadFile {
-  file: File;
-  progress: number;
-  status: "uploading" | "success" | "error";
-}
+
 
 const JOIN_CHAT_EVENT = "joinChat";
 const NEW_CHAT_EVENT = "newChat";
@@ -41,11 +52,12 @@ const LEAVE_CHAT_EVENT = "leaveChat";
 const UPDATE_GROUP_NAME_EVENT = "updateGroupName";
 const MESSAGE_DELETE_EVENT = "messageDeleted";
 
-export default function ChatWindow({ selectedChat, updateChatLastMessage, onOpenGroupDetails }: ChatWindowProps) {
+export default function ChatWindow({ selectedChat, updateChatLastMessage, onOpenGroupDetails, updateChatLastMessageOnDeletion }: ChatWindowProps) {
   const { socket } = useSocket();
   const [triggerGetMessages, { data, isLoading:getMessageLoading }] = useLazyGetMessagesByChatQuery();
 
 const [sendMessage, { isLoading:sendMessageLoading, error }] = useSendMessageMutation();
+const [deleteMessage] = useDeleteMessageMutation();
 const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -61,6 +73,7 @@ const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [loadingChats, setLoadingChats] = useState(false); // To indicate loading of chats
   const [loadingMessages, setLoadingMessages] = useState(false); // To indicate loading of messages
 
+
   const [messages, setMessages] = useState<Message[]>([]); // To store chat messages
   const [unreadMessages, setUnreadMessages] = useState<Message[]>(
     []
@@ -73,9 +86,18 @@ const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
 
+  const handleDeleteMessage = async(message: Message) => {
+    try {
+      await deleteMessage({messageId: message.id}).unwrap();
+      setMessages((prev) => prev.filter((msg) => msg.id !== message.id));
+      if (currentChat.current?.id) {
+        updateChatLastMessageOnDeletion(currentChat.current?.id, message);
+      }
+    } catch (error) {
+      console.error("Error deleting message:", error);
+    }
+  };
 
-
-  
  const getMessages = async () => {
     // Check if socket is available, if not, show an alert
     if (!selectedChat ||!socket) return alert("Socket not available");
@@ -123,25 +145,10 @@ const sendChatMessage = async () => {
   }
 };
 
-  const onMessageReceived = useCallback((message: Message) => {
-    console.log("Message Received")
-    // Check if the received message belongs to the currently active chat
-    if (message?.chat.id !== selectedChat?.id) {
-      // If not, update the list of unread messages
-      setUnreadMessages((prev) => [message, ...prev]);
-    } else {
-      // If it belongs to the current chat, update the messages list for the active chat
-      setMessages((prev) => [ ...prev,message]);
-    }
-
-    // Update the last message for the chat to which the received message belongs
-    updateChatLastMessage(message.chat.id || "", message);
-  },[selectedChat, updateChatLastMessage]);
-
-  const onRenameGroupChat = useCallback((chat: ChatInterface) => {
-    console.log("Group chat renamed:", chat);
+  // const onRenameGroupChat = useCallback((chat: ChatInterface) => {
+  //   console.log("Group chat renamed:", chat);
     
-  }, []);
+  // }, []);
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   if (!e.target.files) return; // No files selected
 
@@ -184,25 +191,7 @@ const sendChatMessage = async () => {
     }, timerLength);
   };
 
-  const handleOnSocketTyping = useCallback((chatId: string) => {
-    // Check if the typing event is for the currently active chat.
-    if (chatId !== selectedChat?.id) return;
-
-    // Set the typing state to true for the current chat.
-    setIsTyping(true);
-  }, [selectedChat]);
-
-  /**
-   * Handles the "stop typing" event on the socket.
-   */
-  const handleOnSocketStopTyping = useCallback((chatId: string) => {
-    // Check if the stop typing event is for the currently active chat.
-    if (chatId !== selectedChat?.id) return;
-
-    // Set the typing state to false for the current chat.
-    setIsTyping(false);
-  },[selectedChat])
-
+  
 
 
   useEffect(()=>{
@@ -218,22 +207,56 @@ const sendChatMessage = async () => {
     }
   },[selectedChat])
 
-  useEffect(() => {
+  const selectedChatRef = useRef(selectedChat);
+useEffect(() => {
+  selectedChatRef.current = selectedChat;
+}, [selectedChat]);
+
+useEffect(() => {
   if (!socket) return;
 
-  // console.log("mounting");
+  const onMessageReceived = (message: Message) => {
+    if (message.chat.id !== selectedChatRef.current?.id) {
+      setUnreadMessages(prev => [message, ...prev]);
+    } else {
+      setMessages(prev => [...prev, message]);
+    }
+    updateChatLastMessage(message.chat.id || "", message);
+  };
+
+  const onMessageDelete = (message: Message) => {
+    if (message?.chat.id !== selectedChatRef.current?.id) {
+      setUnreadMessages((prev) =>
+        prev.filter((msg) => msg.id !== message.id)
+      );
+    } else {
+      setMessages((prev) => prev.filter((msg) => msg.id !== message.id));
+    }
+
+    updateChatLastMessageOnDeletion(message.chat.id || "", message);
+  };
+
+  const handleOnSocketTyping = (chatId: string) => {
+    if (chatId === selectedChatRef.current?.id) setIsTyping(true);
+  };
+
+  const handleOnSocketStopTyping = (chatId: string) => {
+    if (chatId === selectedChatRef.current?.id) setIsTyping(false);
+  };
+
+  socket.on(MESSAGE_RECEIVED_EVENT, onMessageReceived);
   socket.on(TYPING_EVENT, handleOnSocketTyping);
   socket.on(STOP_TYPING_EVENT, handleOnSocketStopTyping);
-  socket.on(MESSAGE_RECEIVED_EVENT, onMessageReceived);
-  socket.on(UPDATE_GROUP_NAME_EVENT, onRenameGroupChat);
+  socket.on(MESSAGE_DELETE_EVENT, onMessageDelete);
 
   return () => {
+    socket.off(MESSAGE_RECEIVED_EVENT, onMessageReceived);
     socket.off(TYPING_EVENT, handleOnSocketTyping);
     socket.off(STOP_TYPING_EVENT, handleOnSocketStopTyping);
-    socket.off(MESSAGE_RECEIVED_EVENT, onMessageReceived);
-    socket.off(UPDATE_GROUP_NAME_EVENT, onRenameGroupChat);
+    socket.off(MESSAGE_DELETE_EVENT, onMessageDelete);
   };
-}, [socket, onMessageReceived, onRenameGroupChat, handleOnSocketTyping, handleOnSocketStopTyping]);
+}, [socket, updateChatLastMessage]);
+
 
 
   if (!selectedChat) {
@@ -289,6 +312,28 @@ const sendChatMessage = async () => {
                 <ChatBubbleMessage variant={isSent ? "sent" : "received"}>
                   {msg.content}
                 </ChatBubbleMessage>
+                <ChatAttachments attachments={msg.attachments || []} />
+                 {/* Shadcn dropdown menu for options */}
+              <ChatBubbleActionWrapper variant={isSent ? "sent" : "received"}>
+                {msg.sender.id === currentUserId && (<DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <ChatBubbleAction
+                      icon={<MoreVertical className="w-4 h-4" />}
+                      aria-label="Message options"
+                    />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" side="bottom" className="w-40">
+                    <DropdownMenuItem
+                      className="text-destructive"
+                      onSelect={() => handleDeleteMessage(msg)}
+                    >
+                      Delete Message
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>)}
+              </ChatBubbleActionWrapper>
+              
+          
                 <ChatBubbleTimestamp
                   timestamp={new Date(msg.createdAt).toLocaleTimeString([], {
                     hour: "2-digit",
@@ -330,11 +375,11 @@ const sendChatMessage = async () => {
 >
   {/* Attachments preview */}
   {attachedFiles.length > 0 && (
-    <div className="flex flex-wrap gap-2 p-2 border rounded bg-muted">
+    <div className="flex flex-wrap gap-2 p-2 border rounded dark:bg-dark-bg bg-muted">
       {attachedFiles.map((file, index) => (
         <div
           key={index}
-          className="flex items-center gap-2 px-2 py-1 bg-white rounded shadow-sm"
+          className="flex items-center gap-2 px-2 py-1 bg-white dark:bg-dark-secondary rounded shadow-sm"
         >
           {file.type.startsWith("image/") ? (
             <img
@@ -351,9 +396,9 @@ const sendChatMessage = async () => {
             onClick={() =>
               setAttachedFiles((prev) => prev.filter((_, i) => i !== index))
             }
-            className="text-xs text-red-500 hover:underline"
+            className="text-xs text-muted-foreground hover:text-foreground"
           >
-            Remove
+            <X className="w-4 h-4" />
           </button>
         </div>
       ))}
@@ -410,12 +455,12 @@ const sendChatMessage = async () => {
   </div>
 
   {/* Upload progress */}
-  {uploadProgress !== null && (
+  {/* {uploadProgress !== null && (
     <div className="mt-2">
       <Progress value={uploadProgress} />
       <span className="text-xs">{uploadProgress}%</span>
     </div>
-  )}
+  )} */}
 </form>
 
 

@@ -64,12 +64,13 @@ export interface User {
 
 export interface Attachment {
   id: string;
-  fileURL: string;
+  url: string;
   fileName: string;
   taskId?: string;
   uploadedById: string;
   messageId?: string;
   message?: Message;
+  fileType: string;
 }
 
 export interface Task {
@@ -429,13 +430,18 @@ export const api = createApi({
       providesTags: ["Users"],
     }),
 
+  
     getMessagesByChat: build.query<ApiResponse<Message[]>, string>({
-      query: (chatId) => `messages/${chatId}`,
-      providesTags: (result) =>
-        result?.data
-          ? result.data.map((message) => ({ type: "Messages", id: message.id }))
-          : [{ type: "Messages" }],
-    }),
+  query: (chatId) => `messages/${chatId}`,
+  providesTags: (result, error, chatId) =>
+    result?.data
+      ? [
+          ...result.data.map((message) => ({ type: "Messages" as const, id: message.id })),
+          { type: "Messages" as const, id: `CHAT_${chatId}` },
+        ]
+      : [{ type: "Messages" as const, id: `CHAT_${chatId}` }],
+}),
+
    
 
 sendMessage: build.mutation<
@@ -474,7 +480,8 @@ sendMessage: build.mutation<
       return { error: { status: error.response?.status, data: error.response?.data } };
     }
   },
-  invalidatesTags: ["Messages"],
+ invalidatesTags: (result, error, { chatId }) => [{ type: "Messages", id: `CHAT_${chatId}` }],
+
 }),
 
     renameGroupChat: build.mutation<ApiResponse<ChatInterface>, { chatId: string; name: string }>({
@@ -529,6 +536,39 @@ sendMessage: build.mutation<
 
     }),
 
+    deleteMessage: build.mutation<ApiResponse<Message>, { messageId: string }>({
+      query: ({ messageId }) => ({
+        url: `messages/${messageId}`,
+        method: "DELETE",
+        
+      }),
+      invalidatesTags: (result, error, { messageId }) => [
+        { type: "Messages", id: messageId },
+      ],
+    }),
+
+    deleteGroupChat: build.mutation<ApiResponse<null>, { chatId: string }>({
+      query: ({ chatId }) => ({
+        url: `chats/group/${chatId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, { chatId }) => [
+        { type: "Chats", id: "LIST" },
+        { type: "Chats", id: chatId },
+      ],
+    }),
+
+    deleteOneOnOneChat: build.mutation<ApiResponse<null>, { chatId: string }>({
+      query: ({ chatId }) => ({
+        url: `chats/one-on-one/${chatId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, { chatId }) => [
+        { type: "Chats", id: "LIST" },
+        { type: "Chats", id: chatId },
+      ],
+    }),
+
   }),
 })
 
@@ -574,5 +614,8 @@ export const {
   useLeaveGroupChatMutation,
   useAddUserToGroupChatMutation,
   useRemoveUserFromGroupChatMutation,
+  useDeleteMessageMutation,
+  useDeleteGroupChatMutation,
+  useDeleteOneOnOneChatMutation
 
 } = api;

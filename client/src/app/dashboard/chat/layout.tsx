@@ -37,19 +37,30 @@ const updateChatLastMessage = (
   const updatedChat: ChatInterface = {
     ...chatToUpdate,
     lastMessage: message,
-    updatedAt: message.updatedAt,
+    lastMessageAt: message.createdAt,
   };
 
   const otherChats = chats.filter((chat) => chat.id !== chatToUpdateId);
 
-  const sortedChats = [updatedChat, ...otherChats].sort(
-    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-  );
+  const sortedChats = [updatedChat, ...otherChats].sort((a, b) => {
+    const dateA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+    const dateB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+    return dateB - dateA;
+  });
 
   setChats(sortedChats);
 };
 
+const updateChatLastMessageOnDeletion = (
+    chatToUpdateId: string,
+    message: Message
+  ) => {
+    const chatToUpdate = chats.find((chat) => chat.id === chatToUpdateId)!;
 
+    if (chatToUpdate.lastMessage?.id === message.id) {
+      refetch();
+    }
+  };
 
 
     const [activeView, setActiveView] = useState<ActiveView>({ type: "empty" });
@@ -78,6 +89,7 @@ const updateChatLastMessage = (
           <ChatWindow
             selectedChat={activeView.chat}
             updateChatLastMessage={updateChatLastMessage}
+            updateChatLastMessageOnDeletion={updateChatLastMessageOnDeletion}
             onOpenGroupDetails={() =>
               setActiveView({ type: "groupDetails", chat: activeView.chat })
             }

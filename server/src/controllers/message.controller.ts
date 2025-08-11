@@ -12,6 +12,7 @@ import { v2 as cloudinary } from "cloudinary";
 const prisma = new PrismaClient();
 
 const messageCommonInclude = {
+  attachments: true,
   sender: {
     select: {
       id: true,
@@ -121,7 +122,7 @@ const sendMessage = asyncHandler(
     lastMessage: {
       connect: { id: message.id },
     },
-    lastMessageAt: new Date(),
+    lastMessageAt: message.createdAt,
   },
 });
 
@@ -227,9 +228,13 @@ const deleteMessage = asyncHandler(
             });
             await prisma.chat.update({
                 where: { id: message.chat.id },
-                data: { lastMessageId: newLastMessage?.id || null },
+                data: { lastMessageId: newLastMessage?.id || null,
+                  lastMessageAt: newLastMessage?.createdAt || null
+                 },
             });
         }
+
+
         message.chat.participants.forEach((participant) => {
             if (participant.id.toString() === userId) return;
 

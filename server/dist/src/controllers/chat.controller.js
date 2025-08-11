@@ -257,7 +257,7 @@ const getUserChats = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0,
         },
         include: chatCommonInclude,
         orderBy: {
-            updatedAt: "desc",
+            lastMessageAt: "desc",
         },
     });
     console.log("Fetched user chats:", chats);

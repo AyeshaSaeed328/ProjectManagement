@@ -1,4 +1,4 @@
-// app/layout.tsx or app/rootLayout.tsx
+
 import type { Metadata } from "next";
 import "./globals.css";
 import StoreProvider from './StoreProvider'

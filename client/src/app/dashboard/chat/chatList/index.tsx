@@ -4,13 +4,20 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { ChatInterface, useGetAllUsersQuery, User, useCreateOneOnOneChatMutation } from "@/state/api";
+import { ChatInterface, useGetAllUsersQuery, User, useCreateOneOnOneChatMutation, useDeleteGroupChatMutation, useDeleteOneOnOneChatMutation } from "@/state/api";
 import { UserGroupIcon } from "@heroicons/react/24/solid";
 import { useSocket } from '@/context/socket'
 import { useEffect, useState } from "react";
 import AddChatModal from "@/(components)/AddChatModal";
 import { Search } from "lucide-react";
 import { useAppSelector } from "@/app/redux";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { MoreVertical } from "lucide-react";
 
 
 
@@ -22,22 +29,38 @@ interface ChatListItemProps {
   name: string;
   lastMessage: string;
   profilePic?: string;
-  updatedAt: string;
+  isGroupChat?: boolean;
   selected?: boolean;
   onClick: () => void;
   lastMessageAt: string;
 }
 
 const ChatListItem: React.FC<ChatListItemProps> = ({
+  id,
   name,
   lastMessage,
   profilePic,
-  updatedAt,
+  isGroupChat,
   lastMessageAt,
   selected,
   onClick,
 }) => {
   const [now, setNow] = useState(Date.now());
+  const [isHovered, setIsHovered] = useState(false);
+  const [deleteGroupChat] = useDeleteGroupChatMutation();
+  const [deleteOneOnOneChat] = useDeleteOneOnOneChatMutation();
+
+  const handleDeleteChat = async (chatId: string) => {
+    try {
+      if (isGroupChat) {
+        await deleteGroupChat({ chatId }).unwrap();
+      } else {
+        await deleteOneOnOneChat({ chatId }).unwrap();
+      }
+    } catch (error) {
+      console.error("Error deleting chat:", error);
+    }
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -46,30 +69,59 @@ const ChatListItem: React.FC<ChatListItemProps> = ({
     return () => clearInterval(interval);
   }, []);
   return (
-    <div
-      onClick={onClick}
-      className={cn(
-        "flex items-center gap-3 p-4 cursor-pointer transition-colors",
-        selected ? "bg-muted dark:bg-dark-secondary" : "hover:bg-accent hover:dark:bg-dark-tertiary"
-      )}
-    >
-      <Avatar>
-        <AvatarImage src={profilePic} alt={name} />
-        <AvatarFallback className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white">
-          {name?.[0] || "?"}
-        </AvatarFallback>
-      </Avatar>
+     <div
+  onClick={onClick}
+  onMouseEnter={() => setIsHovered(true)}
+  onMouseLeave={() => setIsHovered(false)}
+  className={cn(
+    "flex items-center gap-3 p-4 cursor-pointer transition-colors relative",
+    selected
+      ? "bg-muted dark:bg-dark-secondary"
+      : "hover:bg-accent hover:dark:bg-dark-tertiary"
+  )}
+>
+  <Avatar>
+    <AvatarImage src={profilePic} alt={name} />
+    <AvatarFallback className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white">
+      {name?.[0] || "?"}
+    </AvatarFallback>
+  </Avatar>
 
-      <div className="flex-1 min-w-0">
-        <p className="font-medium truncate dark:text-white">{name}</p>
-        <p className="text-sm text-muted-foreground truncate">
-          {lastMessage || "No messages yet"}
-        </p>
-      </div>
-      <div className="text-xs text-muted-foreground whitespace-nowrap">
-        {formatDistanceToNow(new Date(updatedAt), { addSuffix: true })}
-      </div>
-    </div>
+  <div className="flex-1 min-w-0">
+    <p className="font-medium truncate dark:text-white">{name}</p>
+    <p className="text-sm text-muted-foreground truncate">
+      {lastMessage || "No messages yet"}
+    </p>
+  </div>
+  <div className="text-xs text-muted-foreground whitespace-nowrap">
+    {formatDistanceToNow(new Date(lastMessageAt), { addSuffix: true })}
+  </div>
+
+  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        {isHovered ? (
+          <button
+            onClick={(e) => e.stopPropagation()}
+            aria-label="Chat options"
+            className="p-1 rounded hover:bg-accent/50 dark:hover:bg-dark-tertiary/70 transition"
+          >
+            <MoreVertical className="w-5 h-5 text-muted-foreground" />
+          </button>
+        ) : (
+          // Render invisible but focusable element to keep dropdown working
+          <span className="w-5 h-5 block" />
+        )}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" side="bottom" className="w-40">
+        <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteChat(id)}>
+          Delete Chat
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </div>
+</div>
+
   )
 };
 
@@ -220,7 +272,7 @@ const ChatList: React.FC<ChatListProps> = ({
                 lastMessage={chat.lastMessage?.content || ""}
                 lastMessageAt={chat.lastMessageAt?.toString() || ""}
                 profilePic={chat.isGroupChat ? chat.name?.charAt(0) : otherUser?.profilePicture}
-                updatedAt={chat.updatedAt.toString()}
+                isGroupChat={chat.isGroupChat}
                 selected={selectedChat === chat}
                 onClick={() => onSelectChat(chat)}
               />

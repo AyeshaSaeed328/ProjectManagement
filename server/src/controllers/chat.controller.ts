@@ -361,7 +361,7 @@ const getUserChats = asyncHandler(
       },
       include: chatCommonInclude,
       orderBy: {
-        updatedAt: "desc",
+        lastMessageAt: "desc",
       },
     });
     console.log("Fetched user chats:", chats);

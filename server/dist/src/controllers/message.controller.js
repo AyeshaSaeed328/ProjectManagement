@@ -24,6 +24,7 @@ const uploadToCloud_1 = require("../utils/uploadToCloud");
 const cloudinary_1 = require("cloudinary");
 const prisma = new client_1.PrismaClient();
 const messageCommonInclude = {
+    attachments: true,
     sender: {
         select: {
             id: true,
@@ -110,7 +111,7 @@ const sendMessage = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, 
             lastMessage: {
                 connect: { id: message.id },
             },
-            lastMessageAt: new Date(),
+            lastMessageAt: message.createdAt,
         },
     });
     const fullMessage = yield prisma.message.findUnique({
@@ -198,7 +199,9 @@ const deleteMessage = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0
         });
         yield prisma.chat.update({
             where: { id: message.chat.id },
-            data: { lastMessageId: (newLastMessage === null || newLastMessage === void 0 ? void 0 : newLastMessage.id) || null },
+            data: { lastMessageId: (newLastMessage === null || newLastMessage === void 0 ? void 0 : newLastMessage.id) || null,
+                lastMessageAt: (newLastMessage === null || newLastMessage === void 0 ? void 0 : newLastMessage.createdAt) || null
+            },
         });
     }
     message.chat.participants.forEach((participant) => {
