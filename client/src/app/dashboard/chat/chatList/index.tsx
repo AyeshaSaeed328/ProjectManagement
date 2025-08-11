@@ -25,6 +25,7 @@ interface ChatListItemProps {
   updatedAt: string;
   selected?: boolean;
   onClick: () => void;
+  lastMessageAt: string;
 }
 
 const ChatListItem: React.FC<ChatListItemProps> = ({
@@ -32,38 +33,52 @@ const ChatListItem: React.FC<ChatListItemProps> = ({
   lastMessage,
   profilePic,
   updatedAt,
+  lastMessageAt,
   selected,
   onClick,
-}) => (
-  <div
-    onClick={onClick}
-    className={cn(
-      "flex items-center gap-3 p-4 cursor-pointer transition-colors",
-      selected ? "bg-muted dark:bg-dark-secondary" : "hover:bg-accent hover:dark:bg-dark-tertiary"
-    )}
-  >
-    <Avatar>
-      <AvatarImage src={profilePic} />
-      <AvatarFallback>{name[0]}</AvatarFallback>
-    </Avatar>
-    <div className="flex-1 min-w-0">
-      <p className="font-medium truncate dark:text-white">{name}</p>
-      <p className="text-sm text-muted-foreground truncate">
-        {lastMessage || "No messages yet"}
-      </p>
+}) => {
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
+  return (
+    <div
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-3 p-4 cursor-pointer transition-colors",
+        selected ? "bg-muted dark:bg-dark-secondary" : "hover:bg-accent hover:dark:bg-dark-tertiary"
+      )}
+    >
+      <Avatar>
+        <AvatarImage src={profilePic} alt={name} />
+        <AvatarFallback className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white">
+          {name?.[0] || "?"}
+        </AvatarFallback>
+      </Avatar>
+
+      <div className="flex-1 min-w-0">
+        <p className="font-medium truncate dark:text-white">{name}</p>
+        <p className="text-sm text-muted-foreground truncate">
+          {lastMessage || "No messages yet"}
+        </p>
+      </div>
+      <div className="text-xs text-muted-foreground whitespace-nowrap">
+        {formatDistanceToNow(new Date(updatedAt), { addSuffix: true })}
+      </div>
     </div>
-    <div className="text-xs text-muted-foreground whitespace-nowrap">
-      {formatDistanceToNow(new Date(updatedAt), { addSuffix: true })}
-    </div>
-  </div>
-);
+  )
+};
 
 
 interface ChatListProps {
   chats: ChatInterface[];
   selectedChat?: ChatInterface;
   onSelectChat: (chat: ChatInterface) => void;
-  refetchChats: ()=> void
+  refetchChats: () => void
 }
 
 
@@ -75,42 +90,42 @@ const ChatList: React.FC<ChatListProps> = ({
 }) => {
   const { socket } = useSocket();
 
-  const {data:allUsers, isLoading: usersLoading, isError: userssError} = useGetAllUsersQuery() 
+  const { data: allUsers, isLoading: usersLoading, isError: userssError } = useGetAllUsersQuery()
   const [createOneChat, { isLoading: isChatOneLoading }] = useCreateOneOnOneChatMutation();
-  
-  const [openAddChat, setOpenAddChat] = useState(false); 
+
+  const [openAddChat, setOpenAddChat] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User| null>(null)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const currentUserId = useAppSelector((state) => state.global.auth.user?.id);
 
-  
-    const onNewChat = (chat: ChatInterface) => {
-      
-      setSearchTerm("")
-      setShowSuggestions(false)
-      setSelectedUser(null)
-      // refetchChats();
-    
+
+  const onNewChat = (chat: ChatInterface) => {
+
+    setSearchTerm("")
+    setShowSuggestions(false)
+    setSelectedUser(null)
+    // refetchChats();
+
   };
 
   const createNewChatWithUser = async (user: User) => {
-  try {
-    const chat = await createOneChat({ receiverId: user.id }).unwrap();
-    console.log(chat)
-    onSelectChat(chat.data)
-  } catch (error: any) {
-    console.error("Error creating chat:", error);
-  }
-};
+    try {
+      const chat = await createOneChat({ receiverId: user.id }).unwrap();
+      console.log(chat)
+      onSelectChat(chat.data)
+    } catch (error: any) {
+      console.error("Error creating chat:", error);
+    }
+  };
 
 
   const filteredChats = chats.filter((chat) => {
     const otherUser = chat.participants.find(p => p.id !== currentUserId);;
     const name = chat.isGroupChat
-    ? chat.name
-    : otherUser?.username || "";
+      ? chat.name
+      : otherUser?.username || "";
 
     return name?.toLowerCase().includes(searchTerm.toLowerCase());
   });
@@ -120,21 +135,21 @@ const ChatList: React.FC<ChatListProps> = ({
       user.username.toLowerCase().includes(searchTerm.toLowerCase())
     ) || [];
 
-    useEffect(() => {
-      // If the socket isn't initialized, we don't set up listeners.
-      if (!socket) return;
-  
-      
-      socket.on(NEW_CHAT_EVENT, onNewChat);
-     
-      return () => {
-        
-        socket.off(NEW_CHAT_EVENT, onNewChat);
-        
-      };
-  
-      
-    }, [socket]);
+  useEffect(() => {
+    // If the socket isn't initialized, we don't set up listeners.
+    if (!socket) return;
+
+
+    socket.on(NEW_CHAT_EVENT, onNewChat);
+
+    return () => {
+
+      socket.off(NEW_CHAT_EVENT, onNewChat);
+
+    };
+
+
+  }, [socket]);
   return (
     <aside className="relative w-full sm:w-80 h-full border-r bg-white dark:bg-dark-bg">
       <AddChatModal
@@ -143,7 +158,7 @@ const ChatList: React.FC<ChatListProps> = ({
           setOpenAddChat(false);
         }}
       />
-       <div className="p-3">
+      <div className="p-3">
         <div className="relative flex h-min w-full">
           <Search className="absolute left-[8px] top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
           <input
@@ -176,7 +191,7 @@ const ChatList: React.FC<ChatListProps> = ({
                     setShowSuggestions(false);
                     createNewChatWithUser(user);
 
-                    
+
                   }}
                 >
                   {user.username}
@@ -195,15 +210,16 @@ const ChatList: React.FC<ChatListProps> = ({
         {chats.length === 0 ? (
           <p className="p-4 text-muted-foreground">No chats yet</p>
         ) : (
-            filteredChats.map((chat) => {
-  const otherUser = chat.participants.find(p => p.id !== currentUserId);
+          filteredChats.map((chat) => {
+            const otherUser = chat.participants.find(p => p.id !== currentUserId);
             return (
               <ChatListItem
                 key={chat.id}
                 id={chat.id}
                 name={chat.isGroupChat ? chat.name : otherUser?.username || "Unknown"}
                 lastMessage={chat.lastMessage?.content || ""}
-                profilePic={otherUser?.profilePicture}
+                lastMessageAt={chat.lastMessageAt?.toString() || ""}
+                profilePic={chat.isGroupChat ? chat.name?.charAt(0) : otherUser?.profilePicture}
                 updatedAt={chat.updatedAt.toString()}
                 selected={selectedChat === chat}
                 onClick={() => onSelectChat(chat)}

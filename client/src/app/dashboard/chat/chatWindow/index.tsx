@@ -11,16 +11,25 @@ import { ChatInput } from "@/components/ui/chat/chat-input";
 import { ChatMessageList } from "@/components/ui/chat/chat-message-list";
 import { Button } from "@/components/ui/button";
 
-import { SendHorizonal, Paperclip, Image } from "lucide-react";
+import { SendHorizonal, Paperclip, Image, EllipsisVerticalIcon } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { ChatInterface, Message, useLazyGetMessagesByChatQuery, useSendMessageMutation } from "@/state/api";
 import { useAppSelector } from "@/app/redux";
 import { useSocket } from "@/context/socket";
 import MessageLoading from "@/components/ui/chat/message-loading";
+import {GroupChatDropdown} from "@/(components)/GroupChatDropdowm";
+import { Progress } from "@/components/ui/progress";
 
 interface ChatWindowProps {
   selectedChat: ChatInterface | null;
   updateChatLastMessage: (chatId: string, message: Message) => void;
+  onOpenGroupDetails: (chat: ChatInterface) => void;
+  onExitGroupClick?: (chat: ChatInterface) => void;
+}
+interface UploadFile {
+  file: File;
+  progress: number;
+  status: "uploading" | "success" | "error";
 }
 
 const JOIN_CHAT_EVENT = "joinChat";
@@ -32,11 +41,13 @@ const LEAVE_CHAT_EVENT = "leaveChat";
 const UPDATE_GROUP_NAME_EVENT = "updateGroupName";
 const MESSAGE_DELETE_EVENT = "messageDeleted";
 
-export default function ChatWindow({ selectedChat, updateChatLastMessage }: ChatWindowProps) {
+export default function ChatWindow({ selectedChat, updateChatLastMessage, onOpenGroupDetails }: ChatWindowProps) {
   const { socket } = useSocket();
   const [triggerGetMessages, { data, isLoading:getMessageLoading }] = useLazyGetMessagesByChatQuery();
 
 const [sendMessage, { isLoading:sendMessageLoading, error }] = useSendMessageMutation();
+const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const currentUserId = useAppSelector((state)=>state.global.auth.user?.id)
@@ -87,28 +98,31 @@ const [sendMessage, { isLoading:sendMessageLoading, error }] = useSendMessageMut
   }
   };
 
-   const sendChatMessage = async () => {
-    // If no current chat ID exists or there's no socket connection, exit the function
-    if (!selectedChat || !socket) return;
+   
+const sendChatMessage = async () => {
+  if (!selectedChat || !socket) return;
 
-    // Emit a STOP_TYPING_EVENT to inform other users/participants that typing has stopped
-    socket.emit(STOP_TYPING_EVENT, selectedChat?.id);
-try {
+  socket.emit(STOP_TYPING_EVENT, selectedChat.id);
+
+  try {
     const res = await sendMessage({
       chatId: selectedChat.id,
       content: message,
-      attachments: attachedFiles, // File[] from input
+      attachments: attachedFiles,
+      onUploadProgress: (percent) => setUploadProgress(percent),
     }).unwrap();
-    setMessage(""); // Clear the message input
-        setAttachedFiles([]); // Clear the list of attached files
-        setMessages((prev) => [ ...prev,res.data]); // Update messages in the UI
-        updateChatLastMessage(selectedChat.id || "", res.data); 
 
-    console.log("✅ Message sent:", res);
+    setMessage("");
+    setAttachedFiles([]);
+    setMessages((prev) => [...prev, res.data]);
+    updateChatLastMessage(selectedChat.id, res.data);
   } catch (err) {
     console.error("❌ Failed to send:", err);
+  } finally {
+    setUploadProgress(null); // reset after completion
   }
-  }
+};
+
   const onMessageReceived = useCallback((message: Message) => {
     console.log("Message Received")
     // Check if the received message belongs to the currently active chat
@@ -123,6 +137,17 @@ try {
     // Update the last message for the chat to which the received message belongs
     updateChatLastMessage(message.chat.id || "", message);
   },[selectedChat, updateChatLastMessage]);
+
+  const onRenameGroupChat = useCallback((chat: ChatInterface) => {
+    console.log("Group chat renamed:", chat);
+    
+  }, []);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  if (!e.target.files) return; // No files selected
+
+  const files = Array.from(e.target.files); // Safe now
+  setAttachedFiles((prev) => [...prev, ...files]);
+};
 
 
    const handleOnMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>{
@@ -200,13 +225,15 @@ try {
   socket.on(TYPING_EVENT, handleOnSocketTyping);
   socket.on(STOP_TYPING_EVENT, handleOnSocketStopTyping);
   socket.on(MESSAGE_RECEIVED_EVENT, onMessageReceived);
+  socket.on(UPDATE_GROUP_NAME_EVENT, onRenameGroupChat);
 
   return () => {
     socket.off(TYPING_EVENT, handleOnSocketTyping);
     socket.off(STOP_TYPING_EVENT, handleOnSocketStopTyping);
     socket.off(MESSAGE_RECEIVED_EVENT, onMessageReceived);
+    socket.off(UPDATE_GROUP_NAME_EVENT, onRenameGroupChat);
   };
-}, [socket, onMessageReceived, handleOnSocketTyping, handleOnSocketStopTyping]);
+}, [socket, onMessageReceived, onRenameGroupChat, handleOnSocketTyping, handleOnSocketStopTyping]);
 
 
   if (!selectedChat) {
@@ -220,7 +247,8 @@ try {
   return (
     <div className="flex flex-col h-full w-full border-l bg-white dark:bg-dark-bg dark:text-white">
       {/* Header */}
-      <div className="px-4 py-3 border-b bg-muted flex items-center gap-2 dark:bg-dark-secondary">
+      <div className="flex items-center justify-between px-4 py-3 border-b bg-muted dark:bg-dark-secondary">
+      <div className="px-4 py-3 bg-muted flex items-center gap-2 dark:bg-dark-secondary">
         <ChatBubbleAvatar
           src={selectedChat.participants[0]?.profilePicture}
           fallback={selectedChat.participants[0]?.username || "?"}
@@ -232,6 +260,20 @@ try {
             : selectedChat.participants.find((p) => p.id !== currentUserId)?.username || "Unknown User"}
         </div>
       </div>
+      <div className="flex items-center gap-2">
+    <GroupChatDropdown
+  onOpenGroupDetails={() => {
+    if (selectedChat) {
+      onOpenGroupDetails(selectedChat);
+    }
+  }}
+  chatId={selectedChat?.id}
+/>
+        
+      </div>
+      </div>
+
+      {/* Messages */}
 
       <ChatMessageList>
         {messages?.map((msg) => {
@@ -282,48 +324,100 @@ try {
       <form
   onSubmit={(e) => {
     e.preventDefault();
-   
+    sendChatMessage();
   }}
-  className="border-t px-4 py-3 flex gap-2 items-end"
+  className="border-t px-4 py-3 flex flex-col gap-2"
 >
-  
-  <div className="flex flex-col w-full gap-1">
-    <div className="flex items-center gap-2">
-    {/* Chat Input */}
+  {/* Attachments preview */}
+  {attachedFiles.length > 0 && (
+    <div className="flex flex-wrap gap-2 p-2 border rounded bg-muted">
+      {attachedFiles.map((file, index) => (
+        <div
+          key={index}
+          className="flex items-center gap-2 px-2 py-1 bg-white rounded shadow-sm"
+        >
+          {file.type.startsWith("image/") ? (
+            <img
+              src={URL.createObjectURL(file)}
+              alt={file.name}
+              className="w-10 h-10 object-cover rounded"
+            />
+          ) : (
+            <Paperclip className="w-5 h-5 text-muted-foreground" />
+          )}
+          <span className="text-sm truncate max-w-[100px]">{file.name}</span>
+          <button
+            type="button"
+            onClick={() =>
+              setAttachedFiles((prev) => prev.filter((_, i) => i !== index))
+            }
+            className="text-xs text-red-500 hover:underline"
+          >
+            Remove
+          </button>
+        </div>
+      ))}
+    </div>
+  )}
+
+  {/* Message input + send button */}
+  <div className="flex items-center gap-2">
     <ChatInput
       placeholder="Type your message..."
       value={message}
       ref={inputRef}
       onChange={handleOnMessageChange}
       onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      sendChatMessage();
-                    }
-                  }}
+        if (e.key === "Enter") {
+          sendChatMessage();
+        }
+      }}
     />
-    {/* Send Button */}
-  <Button type="submit" size="icon" disabled={!message.trim()} className="bg-gradient-to-br from-purple-600 to-indigo-500 rounded-full shadow-lg" onClick={sendChatMessage}>
-
-    <SendHorizonal className="w-5 h-5 " />
-  </Button>
+    <Button
+      type="submit"
+      size="icon"
+      disabled={!message.trim() && attachedFiles.length === 0}
+      className="bg-gradient-to-br from-purple-600 to-indigo-500 rounded-full shadow-lg"
+    >
+      <SendHorizonal className="w-5 h-5" />
+    </Button>
   </div>
 
-    {/* Icons Below Input */}
-    <div className="flex gap-3 pl-2 pt-2 my-2">
-      <label htmlFor="file-upload" className="cursor-pointer">
-        <Paperclip className="w-5 h-5 text-muted-foreground hover:text-foreground" />
-      </label>
-      <input id="file-upload" type="file" hidden />
+  {/* File pickers */}
+  <div className="flex gap-3 pl-2 pt-2 my-2">
+    <label htmlFor="file-upload" className="cursor-pointer">
+      <Paperclip className="w-5 h-5 text-muted-foreground hover:text-foreground" />
+    </label>
+    <input
+      id="file-upload"
+      type="file"
+      multiple
+      hidden
+      onChange={handleFileChange}
+    />
 
-      <label htmlFor="image-upload" className="cursor-pointer">
-        <Image className="w-5 h-5 text-muted-foreground hover:text-foreground" />
-      </label>
-      <input id="image-upload" type="file" accept="image/*" hidden />
+    <label htmlFor="image-upload" className="cursor-pointer">
+      <Image className="w-5 h-5 text-muted-foreground hover:text-foreground" />
+    </label>
+    <input
+      id="image-upload"
+      type="file"
+      accept="image/*"
+      multiple
+      hidden
+      onChange={handleFileChange}
+    />
+  </div>
+
+  {/* Upload progress */}
+  {uploadProgress !== null && (
+    <div className="mt-2">
+      <Progress value={uploadProgress} />
+      <span className="text-xs">{uploadProgress}%</span>
     </div>
-  </div>
-
-  
+  )}
 </form>
+
 
     </div>
   );

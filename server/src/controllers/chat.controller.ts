@@ -218,9 +218,9 @@ const renameGroupChat = asyncHandler(
     req: Request,
     res: Response
   ): Promise<Response<ApiResponse<ChatWithDetails>>> => {
-    const chatId = req.params.id;
+    const chatId = req.params.chatId;
     const userId = req.user?.id;
-    const { name } = req.body;
+    const { name} = req.body;
 
     if (!userId) {
       throw new ApiError(401, "User not authenticated");
@@ -230,19 +230,28 @@ const renameGroupChat = asyncHandler(
       where: { id: chatId },
       include: chatCommonInclude,
     });
+    console.log("Group chat:", groupChat);
 
     if (!groupChat) {
       throw new ApiError(404, "Group chat not found");
     }
 
+const u =await prisma.chat.update({
+  where: { id: chatId },
+  data: { name },
+});
+console.log("Updated chatttt:", u);
 
-    const updatedChat = await prisma.chat.update({
-      where: { id: chatId },
-      data: { name },
-      include: chatCommonInclude,
-    });
+const updatedChat = await prisma.chat.findUnique({
+  where: { id: chatId },
+  include: chatCommonInclude,
+});
+console.log("Updated chat:", updatedChat);
+if (!updatedChat) {
+  throw new ApiError(404, "Group chat not found");
+}
 
-    updatedChat.participants?.forEach((participant) => {
+    updatedChat?.participants?.forEach((participant) => {
       emitSocketEvent(
         req,
         participant.id,
@@ -265,7 +274,7 @@ const renameGroupChat = asyncHandler(
 
 const leaveGroupChat = asyncHandler(
   async (req: Request, res: Response): Promise<Response<ApiResponse<ChatWithDetails>>> => {
-    const chatId = req.params.id;
+    const chatId = req.params.chatId;
     const userId = req.user?.id;
 
     if (!userId) {
@@ -348,15 +357,14 @@ const getUserChats = asyncHandler(
         participants: {
           some: { id: userId },
         },
-        lastMessageId: {
-      not: null,
-    },
+        
       },
       include: chatCommonInclude,
       orderBy: {
         updatedAt: "desc",
       },
     });
+    console.log("Fetched user chats:", chats);
 
     return res
       .status(200)
@@ -371,12 +379,13 @@ const getUserChats = asyncHandler(
 );
 
 const addUserToGroupChat = asyncHandler(
-   async (
+  async (
     req: Request,
     res: Response
   ): Promise<Response<ApiResponse<ChatWithDetails>>> => {
-    const {chatId, participantId:newUserId} = req.params;
+    const { chatId } = req.params;
     const userId = req.user?.id;
+    let { participantIds } = req.body; 
 
     if (!userId) {
       throw new ApiError(401, "User not authenticated");
@@ -395,20 +404,33 @@ const addUserToGroupChat = asyncHandler(
       throw new ApiError(403, "User is not a participant of this group chat");
     }
 
-    if (!newUserId) {
-      throw new ApiError(400, "New user ID is required");
+    // Normalize participantIds to an array
+    if (!participantIds) {
+      throw new ApiError(400, "Participant ID(s) are required");
+    }
+    if (!Array.isArray(participantIds)) {
+      participantIds = [participantIds];
+    }
+
+    // Remove IDs that are already participants
+    const existingIds = groupChat.participants.map(p => p.id);
+    const newIds = participantIds.filter((id:string) => !existingIds.includes(id));
+
+    if (newIds.length === 0) {
+      throw new ApiError(400, "All provided users are already in the group chat");
     }
 
     const updatedChat = await prisma.chat.update({
       where: { id: chatId },
       data: {
         participants: {
-          connect: { id: newUserId },
+          connect: newIds.map((id:string) => ({ id })),
         },
       },
       include: chatCommonInclude,
     });
 
+    // Emit single event for all changes
     emitSocketEvent(
       req,
       updatedChat.id,
@@ -422,11 +444,12 @@ const addUserToGroupChat = asyncHandler(
         new ApiResponse<ChatWithDetails>(
           200,
           updatedChat,
-          "User added to group chat successfully"
+          `User(s) added to group chat successfully`
         )
       );
   }
 );
+
 
 const removeUserFromGroupChat = asyncHandler(
    async (

@@ -1,6 +1,6 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { fetchBaseQueryWithReauth } from "./fetchBaseQueryWithReauth";
-
+import axios from "axios";
 
 
 export interface Project {
@@ -146,6 +146,7 @@ export interface ChatInterface {
   updatedAt: Date;
   id: string;
   messages?: Message[];
+  lastMessageAt?: Date;
 }
 
 export interface Message {
@@ -323,9 +324,9 @@ export const api = createApi({
 
     createTask: build.mutation<ApiResponse<Task>, Partial<Task>>({
       query: (task) => ({
-        url: `tasks/create`, 
+        url: `tasks/create`,
         method: "POST",
-        body: task, 
+        body: task,
       }),
       invalidatesTags: ["Tasks"],
     }),
@@ -375,12 +376,12 @@ export const api = createApi({
 
     }),
     getUserTeam: build.query<ApiResponse<Team>, void>({
-  query: () => `teams/me`,
-  providesTags: (result) =>
-    result?.data
-      ? [{ type: "Teams" as const, id: result.data.id }]
-      : [{ type: "Teams" }],
-}),
+      query: () => `teams/me`,
+      providesTags: (result) =>
+        result?.data
+          ? [{ type: "Teams" as const, id: result.data.id }]
+          : [{ type: "Teams" }],
+    }),
 
 
     getUsers: build.query<ApiResponse<User[]>, void>({
@@ -399,14 +400,21 @@ export const api = createApi({
 
     getAllChats: build.query<ApiResponse<ChatInterface[]>, void>({
       query: () => "chats",
-      providesTags: ["Chats"],
+      providesTags: (result) =>
+        result?.data
+          ? [
+            { type: "Chats" as const, id: "LIST" },
+            ...result.data.map((chat) => ({ type: "Chats" as const, id: chat.id })),
+          ]
+          : [{ type: "Chats" as const, id: "LIST" }],
     }),
+
     createOneOnOneChat: build.mutation<ApiResponse<ChatInterface>, { receiverId: string }>({
       query: ({ receiverId }) => ({
         url: `chats/c/${receiverId}`,
         method: "POST",
       }),
-      invalidatesTags: ["Chats"],
+      invalidatesTags: [{ type: "Chats", id: "LIST" }],
     }),
     createGroupChat: build.mutation<ApiResponse<ChatInterface>, { name: string; participantIds: string[] }>({
       query: ({ name, participantIds }) => ({
@@ -414,7 +422,7 @@ export const api = createApi({
         method: "POST",
         body: { name, participantIds },
       }),
-      invalidatesTags: ["Chats"],
+      invalidatesTags: [{ type: "Chats", id: "LIST" }],
     }),
     getAllUsers: build.query<ApiResponse<User[]>, void>({
       query: () => "users/all",
@@ -428,27 +436,101 @@ export const api = createApi({
           ? result.data.map((message) => ({ type: "Messages", id: message.id }))
           : [{ type: "Messages" }],
     }),
-    sendMessage: build.mutation<ApiResponse<Message>, { chatId: string; content: string; attachments?: File[] }>({
-      query: ({ chatId, content, attachments }) => {
-        const formData = new FormData();
-        formData.append("content", content);
-        attachments?.forEach((file: File) => {
-          formData.append("attachments", file);
-        });
+   
 
-        return {
-          url: `/messages/${chatId}`,
-          method: "POST",
-          body: formData,
-        };
-      },
-      invalidatesTags: ["Messages"], 
+sendMessage: build.mutation<
+  ApiResponse<Message>,
+  {
+    chatId: string;
+    content: string;
+    attachments?: File[];
+    onUploadProgress?: (progress: number) => void;
+  }
+>({
+  queryFn: async ({ chatId, content, attachments, onUploadProgress }) => {
+    const formData = new FormData();
+    formData.append("content", content);
+    attachments?.forEach((file) => {
+      formData.append("attachments", file);
+    });
+
+    try {
+      const res = await axios.post<ApiResponse<Message>>(
+        `http://localhost:4000/api/v1/messages/${chatId}`,
+        formData,
+        {
+          withCredentials: true,
+          onUploadProgress: (evt) => {
+            if (onUploadProgress) {
+              const percent = Math.round((evt.loaded * 100) / (evt.total || 1));
+              onUploadProgress(percent);
+            }
+          },
+        }
+      );
+
+      return { data: res.data };
+    } catch (error: any) {
+      return { error: { status: error.response?.status, data: error.response?.data } };
+    }
+  },
+  invalidatesTags: ["Messages"],
+}),
+
+    renameGroupChat: build.mutation<ApiResponse<ChatInterface>, { chatId: string; name: string }>({
+      query: ({ chatId, name }) => ({
+        url: `chats/rename/group/${chatId}`,
+        method: "PATCH",
+        body: { name },
+      }),
+      invalidatesTags: (result, error, { chatId }) => [
+        { type: "Chats", id: "LIST" },
+        { type: "Chats", id: chatId },
+      ],
+
+    }),
+    leaveGroupChat: build.mutation<ApiResponse<null>, { chatId: string }>({
+      query: ({ chatId }) => ({
+        url: `chats/leave/group/${chatId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, { chatId }) => [
+        { type: "Chats", id: "LIST" },
+        { type: "Chats", id: chatId },
+      ],
+
+    }),
+    addUserToGroupChat: build.mutation<
+      ApiResponse<ChatInterface>,
+      { chatId: string; participantIds: string[] }
+    >({
+      query: ({ chatId, participantIds }) => ({
+        url: `chats/add/group/${chatId}`,
+        method: "POST",
+        body: { participantIds },
+      }),
+      invalidatesTags: (result, error, { chatId }) => [
+        { type: "Chats", id: "LIST" },
+        { type: "Chats", id: chatId },
+      ],
+
     }),
 
 
+    removeUserFromGroupChat: build.mutation<ApiResponse<ChatInterface>, { chatId: string; participantId: string }>({
+      query: ({ chatId, participantId }) => ({
+        url: `chats/remove/group/${chatId}/${participantId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, { chatId }) => [
+        { type: "Chats", id: "LIST" },
+        { type: "Chats", id: chatId },
+      ],
+
+    }),
 
   }),
-});
+})
 
 export const {
   useRegisterUserMutation,
@@ -488,5 +570,9 @@ export const {
   useGetAllUsersQuery,
   useLazyGetMessagesByChatQuery,
   useSendMessageMutation,
+  useRenameGroupChatMutation,
+  useLeaveGroupChatMutation,
+  useAddUserToGroupChatMutation,
+  useRemoveUserFromGroupChatMutation,
 
 } = api;

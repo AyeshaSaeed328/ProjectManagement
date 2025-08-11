@@ -121,6 +121,7 @@ const sendMessage = asyncHandler(
     lastMessage: {
       connect: { id: message.id },
     },
+    lastMessageAt: new Date(),
   },
 });
 

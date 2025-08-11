@@ -164,6 +164,7 @@ model Chat {
   adminId       String?
   lastMessage   Message?  @relation("LastMessage", fields: [lastMessageId], references: [id]) 
   lastMessageId String?   @unique
+  lastMessageAt  DateTime @default(now())
   messages      Message[] @relation("ChatMessages")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

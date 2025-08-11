@@ -10,7 +10,7 @@ router.get("/", chat_controller_1.getUserChats);
 router.post("/group", chat_controller_1.createGroupChat);
 router.patch("/rename/group/:chatId", chat_controller_1.renameGroupChat);
 router.delete("/leave/group/:chatId", chat_controller_1.leaveGroupChat);
-router.post("/add/group/:chatId/:participantId", chat_controller_1.addUserToGroupChat);
+router.post("/add/group/:chatId", chat_controller_1.addUserToGroupChat);
 router.delete("/remove/group/:chatId/:participantId", chat_controller_1.removeUserFromGroupChat);
 router.get("/group/:chatId", chat_controller_1.getGroupChatDetails);
 router.delete("/group/:chatId", chat_controller_1.deleteGroupChat);

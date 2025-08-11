@@ -110,6 +110,7 @@ const sendMessage = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, 
             lastMessage: {
                 connect: { id: message.id },
             },
+            lastMessageAt: new Date(),
         },
     });
     const fullMessage = yield prisma.message.findUnique({

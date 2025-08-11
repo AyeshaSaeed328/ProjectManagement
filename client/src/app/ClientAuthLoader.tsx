@@ -22,6 +22,9 @@ export default function ClientAuthLoader() {
         dispatch(setAuthUser(data.data));
       } 
       dispatch(setAuthLoading(false));
+      if (isError) {
+        router.push("/login");
+      }
     }
   }, [data, isError, isLoading, dispatch, router]);
 
