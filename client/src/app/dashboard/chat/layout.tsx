@@ -5,19 +5,21 @@ import ChatWindow from "./chatWindow";
 import { useState, useEffect } from "react";
 import { useGetAllChatsQuery, ChatInterface, Message } from "@/state/api";
 import GroupChatDetails from "./groupChatDetails";
+import { useSocket } from "@/context/socket";
 
 type ActiveView =
   | { type: "chat"; chat: ChatInterface }
   | { type: "groupDetails"; chat: ChatInterface }
   | { type: "empty" };
 
+const LEAVE_CHAT_EVENT = "leaveChat";
 
 export default function ChatLayout() {
   const { data, isLoading, refetch } = useGetAllChatsQuery();
   console.log("Fetched chats data:", data);
+  const {socket} = useSocket();
 
-  
-const [chats, setChats] = useState<ChatInterface[]>([]);
+  const [chats, setChats] = useState<ChatInterface[]>([]);
 
 useEffect(() => {
   if (data?.data) {
@@ -26,6 +28,19 @@ useEffect(() => {
     setChats(data?.data);
   }
 }, [data]);
+
+const onLeave = ()=>{
+  refetch();
+}
+
+useEffect(()=>{
+  if (!socket) return
+  socket.on(LEAVE_CHAT_EVENT, onLeave);
+
+  return () => {
+    socket.off(LEAVE_CHAT_EVENT, onLeave);
+  };
+}, [socket]);
 
 const updateChatLastMessage = (
   chatToUpdateId: string,
@@ -82,6 +97,7 @@ const updateChatLastMessageOnDeletion = (
         chats={chats}
         selectedChat={activeView.type === "chat" ? activeView.chat : undefined}
         onSelectChat={(chat) => setActiveView({ type: "chat", chat })}
+        onLeaveChat={() => setActiveView({ type: "empty" })}
         refetchChats={refetch}
       />
       <div className="flex-1">
@@ -90,9 +106,11 @@ const updateChatLastMessageOnDeletion = (
             selectedChat={activeView.chat}
             updateChatLastMessage={updateChatLastMessage}
             updateChatLastMessageOnDeletion={updateChatLastMessageOnDeletion}
+            refetchChats={refetch}
             onOpenGroupDetails={() =>
               setActiveView({ type: "groupDetails", chat: activeView.chat })
             }
+            onLeaveChat={() => setActiveView({ type: "empty" })}
           />
         )}
 

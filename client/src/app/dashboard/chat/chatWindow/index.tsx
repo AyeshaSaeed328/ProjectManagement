@@ -14,7 +14,7 @@ import { ChatMessageList } from "@/components/ui/chat/chat-message-list";
 import { Button } from "@/components/ui/button";
 
 import { SendHorizonal, Paperclip, Image, X, MoreVertical } from "lucide-react";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState} from "react";
 import { 
   ChatInterface,
   Message,
@@ -33,6 +33,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { on } from "events";
 
 interface ChatWindowProps {
   selectedChat: ChatInterface | null;
@@ -40,6 +41,8 @@ interface ChatWindowProps {
   updateChatLastMessageOnDeletion: (chatId: string, message: Message) => void;
   onOpenGroupDetails: (chat: ChatInterface) => void;
   onExitGroupClick?: (chat: ChatInterface) => void;
+  refetchChats: () => void;
+  onLeaveChat: () => void;
 }
 
 
@@ -52,7 +55,7 @@ const LEAVE_CHAT_EVENT = "leaveChat";
 const UPDATE_GROUP_NAME_EVENT = "updateGroupName";
 const MESSAGE_DELETE_EVENT = "messageDeleted";
 
-export default function ChatWindow({ selectedChat, updateChatLastMessage, onOpenGroupDetails, updateChatLastMessageOnDeletion }: ChatWindowProps) {
+export default function ChatWindow({ selectedChat, updateChatLastMessage, onOpenGroupDetails, updateChatLastMessageOnDeletion, onLeaveChat }: ChatWindowProps) {
   const { socket } = useSocket();
   const [triggerGetMessages, { data, isLoading:getMessageLoading }] = useLazyGetMessagesByChatQuery();
 
@@ -65,24 +68,20 @@ const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const currentUserId = useAppSelector((state)=>state.global.auth.user?.id)
   const currentChat = useRef<ChatInterface | null>(null);
 
-  // To keep track of the setTimeout function
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Define state variables and their initial values using 'useState'
 
-  const [loadingChats, setLoadingChats] = useState(false); // To indicate loading of chats
-  const [loadingMessages, setLoadingMessages] = useState(false); // To indicate loading of messages
 
 
   const [messages, setMessages] = useState<Message[]>([]); // To store chat messages
   const [unreadMessages, setUnreadMessages] = useState<Message[]>(
     []
-  ); // To track unread messages
+  ); 
 
-  const [isTyping, setIsTyping] = useState(false); // To track if someone is currently typing
-  const [selfTyping, setSelfTyping] = useState(false); // To track if the current user is typing
+  const [isTyping, setIsTyping] = useState(false); 
+  const [selfTyping, setSelfTyping] = useState(false);
 
-  const [message, setMessage] = useState(""); // To store the currently typed message
+  const [message, setMessage] = useState("");
 
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
 
@@ -99,7 +98,6 @@ const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   };
 
  const getMessages = async () => {
-    // Check if socket is available, if not, show an alert
     if (!selectedChat ||!socket) return alert("Socket not available");
 
     // Emit an event to join the current chat
@@ -111,12 +109,12 @@ const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     );
 
      try {
+
     const res = await triggerGetMessages(selectedChat?.id).unwrap();
     console.log("Get messages", res)
 
     setMessages(res.data || []);
   } catch (error) {
-    alert("Error fetching messages");
   }
   };
 
@@ -158,35 +156,25 @@ const sendChatMessage = async () => {
 
 
    const handleOnMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>{
-    // Update the message state with the current input value
+    
     setMessage(e.target.value);
 
-    // If socket doesn't exist or isn't connected, exit the function
     if (!socket || !selectedChat) return;
 
-    // Check if the user isn't already set as typing
     if (!selfTyping) {
-      // Set the user as typing
       setSelfTyping(true);
-
-      // Emit a typing event to the server for the current chat
       socket.emit(TYPING_EVENT, selectedChat?.id);
     }
 
-    // Clear the previous timeout (if exists) to avoid multiple setTimeouts from running
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
-    // Define a length of time (in milliseconds) for the typing timeout
     const timerLength = 3000;
 
-    // Set a timeout to stop the typing indication after the timerLength has passed
     typingTimeoutRef.current = setTimeout(() => {
-      // Emit a stop typing event to the server for the current chat
       socket.emit(STOP_TYPING_EVENT, selectedChat?.id);
 
-      // Reset the user's typing state
       setSelfTyping(false);
     }, timerLength);
   };
@@ -195,6 +183,10 @@ const sendChatMessage = async () => {
 
 
   useEffect(()=>{
+     if (!selectedChat) {
+    currentChat.current = null;
+    return;
+  }
       if (selectedChat) {
         console.log("abccc")
       // Set the current chat reference to the one from local storage.
@@ -221,6 +213,7 @@ useEffect(() => {
     } else {
       setMessages(prev => [...prev, message]);
     }
+    // refetchChats(); // Assuming this is a function to refresh the chat list 
     updateChatLastMessage(message.chat.id || "", message);
   };
 
@@ -243,6 +236,8 @@ useEffect(() => {
   const handleOnSocketStopTyping = (chatId: string) => {
     if (chatId === selectedChatRef.current?.id) setIsTyping(false);
   };
+
+
 
   socket.on(MESSAGE_RECEIVED_EVENT, onMessageReceived);
   socket.on(TYPING_EVENT, handleOnSocketTyping);

@@ -4,7 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { ChatInterface, useGetAllUsersQuery, User, useCreateOneOnOneChatMutation, useDeleteGroupChatMutation, useDeleteOneOnOneChatMutation } from "@/state/api";
+import { ChatInterface, Message, useGetAllUsersQuery, User, useCreateOneOnOneChatMutation, useDeleteGroupChatMutation, useDeleteOneOnOneChatMutation } from "@/state/api";
 import { UserGroupIcon } from "@heroicons/react/24/solid";
 import { useSocket } from '@/context/socket'
 import { useEffect, useState } from "react";
@@ -22,6 +22,8 @@ import { MoreVertical } from "lucide-react";
 
 
 const NEW_CHAT_EVENT = "newChat";
+const MESSAGE_RECEIVED_EVENT = "messageReceived";
+
 
 
 interface ChatListItemProps {
@@ -33,6 +35,7 @@ interface ChatListItemProps {
   selected?: boolean;
   onClick: () => void;
   lastMessageAt: string;
+  onLeaveChat: () => void;
 }
 
 const ChatListItem: React.FC<ChatListItemProps> = ({
@@ -43,6 +46,7 @@ const ChatListItem: React.FC<ChatListItemProps> = ({
   isGroupChat,
   lastMessageAt,
   selected,
+  onLeaveChat,
   onClick,
 }) => {
   const [now, setNow] = useState(Date.now());
@@ -54,9 +58,12 @@ const ChatListItem: React.FC<ChatListItemProps> = ({
     try {
       if (isGroupChat) {
         await deleteGroupChat({ chatId }).unwrap();
+        
       } else {
         await deleteOneOnOneChat({ chatId }).unwrap();
       }
+      onLeaveChat();
+
     } catch (error) {
       console.error("Error deleting chat:", error);
     }
@@ -130,15 +137,17 @@ interface ChatListProps {
   chats: ChatInterface[];
   selectedChat?: ChatInterface;
   onSelectChat: (chat: ChatInterface) => void;
-  refetchChats: () => void
+  refetchChats: () => void;
+  onLeaveChat: () => void;
 }
 
 
 const ChatList: React.FC<ChatListProps> = ({
   chats,
   selectedChat,
+  refetchChats,
   onSelectChat,
-  refetchChats
+  onLeaveChat,
 }) => {
   const { socket } = useSocket();
 
@@ -187,16 +196,25 @@ const ChatList: React.FC<ChatListProps> = ({
       user.username.toLowerCase().includes(searchTerm.toLowerCase())
     ) || [];
 
+  const onMessageReceived = (message: Message) => {
+    refetchChats()
+      
+    }; 
+
+ 
+
   useEffect(() => {
     // If the socket isn't initialized, we don't set up listeners.
     if (!socket) return;
 
 
     socket.on(NEW_CHAT_EVENT, onNewChat);
+    socket.on(MESSAGE_RECEIVED_EVENT, onMessageReceived);
 
     return () => {
 
       socket.off(NEW_CHAT_EVENT, onNewChat);
+      socket.off(MESSAGE_RECEIVED_EVENT, onMessageReceived);
 
     };
 
@@ -275,6 +293,7 @@ const ChatList: React.FC<ChatListProps> = ({
                 isGroupChat={chat.isGroupChat}
                 selected={selectedChat === chat}
                 onClick={() => onSelectChat(chat)}
+                onLeaveChat={() => onLeaveChat()}
               />
             );
           })

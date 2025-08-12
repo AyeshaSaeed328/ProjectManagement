@@ -382,7 +382,7 @@ const deleteCascadeChatMessages = (chatId) => __awaiter(void 0, void 0, void 0, 
 });
 const deleteGroupChat = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    const chatId = req.params.id;
+    const chatId = req.params.chatId;
     const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
     if (!userId) {
         throw new ApiError_1.ApiError(401, "User not authenticated");
@@ -401,8 +401,8 @@ const deleteGroupChat = (0, asyncHandler_1.default)((req, res) => __awaiter(void
     const deletedChat = yield prisma.chat.delete({
         where: { id: chatId },
     });
-    const otherParticipants = groupChat.participants.filter((p) => p.id !== userId);
-    otherParticipants.forEach((participant) => {
+    // const otherParticipants = groupChat.participants.filter((p) => p.id !== userId);
+    groupChat.participants.forEach((participant) => {
         (0, socket_1.emitSocketEvent)(req, participant.id, constants_1.ChatEventEnum.LEAVE_CHAT_EVENT, deletedChat);
     });
     return res

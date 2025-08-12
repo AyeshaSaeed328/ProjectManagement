@@ -554,7 +554,6 @@ sendMessage: build.mutation<
       }),
       invalidatesTags: (result, error, { chatId }) => [
         { type: "Chats", id: "LIST" },
-        { type: "Chats", id: chatId },
       ],
     }),
 
@@ -565,7 +564,6 @@ sendMessage: build.mutation<
       }),
       invalidatesTags: (result, error, { chatId }) => [
         { type: "Chats", id: "LIST" },
-        { type: "Chats", id: chatId },
       ],
     }),
 

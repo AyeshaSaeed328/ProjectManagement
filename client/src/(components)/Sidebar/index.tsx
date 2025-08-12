@@ -108,7 +108,7 @@ const Sidebar = ({ projects }: { projects: Project[] }) => {
         {/* TEAM */}
         <div className="flex items-center gap-5 border-y-[1.5px] border-gray-200 px-8 py-8 dark:border-gray-700">
           <Image
-            src={user?.profilePicture! || ""}
+            src={user?.profilePicture || ""}
             alt="Logo"
             width={40}
             height={40}

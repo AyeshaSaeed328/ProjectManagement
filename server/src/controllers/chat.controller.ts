@@ -547,7 +547,7 @@ const deleteCascadeChatMessages = async (chatId: string): Promise<void> => {
 
 const deleteGroupChat = asyncHandler(
   async (req: Request, res: Response): Promise<Response<ApiResponse<ChatWithDetails>>> => {
-    const chatId = req.params.id;
+    const chatId = req.params.chatId;
     const userId = req.user?.id;
 
     if (!userId) {
@@ -573,8 +573,8 @@ const deleteGroupChat = asyncHandler(
       where: { id: chatId },
     });
 
-    const otherParticipants = groupChat.participants.filter((p) => p.id !== userId);
-    otherParticipants.forEach((participant) => {
+    // const otherParticipants = groupChat.participants.filter((p) => p.id !== userId);
+    groupChat.participants.forEach((participant) => {
       emitSocketEvent(
         req,
         participant.id,
