@@ -42,7 +42,7 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
 
   useEffect(() => {
     const socketInstance = io("http://localhost:4000", {
-      withCredentials: true, // ✅ Send HTTP-only cookie with request
+      withCredentials: true, 
     });
     // Listener for when the socket connects.
     socketInstance.on(CONNECTED_EVENT, onConnect);
