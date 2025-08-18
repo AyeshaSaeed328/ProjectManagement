@@ -43,6 +43,12 @@ export const SocketProvider = ({ children }: SocketProviderProps) => {
   useEffect(() => {
     const socketInstance = io("http://localhost:4000", {
       withCredentials: true, 
+      reconnection: true,             // enable auto-reconnect
+  reconnectionAttempts: 5,        // max tries before giving up
+  reconnectionDelay: 1000,        // 1 second delay between retries
+  reconnectionDelayMax: 5000,     // max delay between retries
+  autoConnect: true,              // automatically connect
+  transports: ["websocket"], 
     });
     // Listener for when the socket connects.
     socketInstance.on(CONNECTED_EVENT, onConnect);
